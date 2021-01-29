@@ -1,26 +1,53 @@
 import RPi.GPIO as GPIO
-from devices import dht11
+import dht11
+
+import tkinter
 import time
 import datetime
+
+from multiprocessing import Process, Pipe
+import time
+from unit.Temp import Tsensor
 
 # initialize GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
 
-# read data using pin 14
-instance = dht11.DHT11(pin=16)
 
-try:
-	while True:
-	    result = instance.read()
-	    if result.is_valid():
-	        print("Last valid input: " + str(datetime.datetime.now()))
+def get_temp(pipe, pin=19):
+    instance = dht11.DHT11(pin)
+    while True:
+        result = instance.read()
+        if result.is_valid():
+            pipe.send({'temperature' = result.temperature, 'humidity' = result.humidity})
+        else:
+            pipe.send({'temperature' = "N/A", 'humidity' = "N/A"})
+        time.sleep(1)
 
-	        print("Temperature: %-3.1f C" % result.temperature)
-	        print("Humidity: %-3.1f %%" % result.humidity)
+def get_time(pip):
+    pipe.send({'time' = time.asctime})
+    time.sleep(1)
 
-	    time.sleep(6)
+def MainAPP(pipe):
+    cache = {}
+    while True:
+        data = pipe.recv()
+        cache = dict(cache, **data)
+        # print(cache)  #{'time': 'Sun Nov 29 16:54:28 2020', 'temp': 2}
 
-except KeyboardInterrupt:
-    print("Cleanup")
-    GPIO.cleanup()
+
+
+
+if __name__ == '__main__':
+    pipe = Pipe()
+    mainapp = Process(target=MainAPP, args=(pipe[1],))
+    temp = Process(target=get_temp, args=(pipe[0],))
+    time = Process(target=get_time, args=(pipe[0],))
+
+    mainapp.start()
+    temp.start()
+    time.start()
+
+    mainapp.join()
+    temp.join()
+    time.join()
