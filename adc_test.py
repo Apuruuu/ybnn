@@ -1,20 +1,38 @@
-import time
-import Adafruit_ADS1x15
+# Sample code for ESP8266 & ESP32, Micropython.org firmware
+from machine import I2C, Pin, Timer
+import ADS1x15
+from array import array
 
-adc = Adafruit_ADS1x15.ADS1115()
-GAIN = 8
+addr = 72
+gain = 1
+_BUFFERSIZE = const(512)
 
-def avg(a,b,c,d):
-    d = a+b+c+d
-    d = d / 4
-    return d
+data = array("h", (0 for _ in range(_BUFFERSIZE)))
+i2c = I2C(scl=Pin(5), sda=Pin(4), freq=400000)
+# for the Pycom branch or Micropython, use:
+# i2c = I2C()
+ads = ads1x15.ADS1115(i2c, addr, gain)
+#
+# Interrupt service routine for data acquisition
+# activated by a pin level interrupt
+#
+def sample_auto(x, adc = ads.alert_read, data = data):
+    global index_put
+    if index_put < _BUFFERSIZE:
+        data[index_put] = adc()
+        index_put += 1
 
+index_put = 0
 
-while True:
-     values = [0]*4
-     for i in range(4):
-         values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
-    
-     print('AVG: %f |   |NF %f |R %f |G %f |B %f |' %(avg(values[0],values[1],values[2],values[3]),values[0],values[1],values[2],values[3]))
-     
-     time.sleep(0.001)
+irq_pin = Pin(13, Pin.IN, Pin.PULL_UP)
+ads.conversion_start(5, 0)
+
+irq_pin.irq(trigger=Pin.IRQ_FALLING, handler=sample_auto)
+
+while index_put < _BUFFERSIZE:
+    pass
+
+irq_pin.irq(handler=None)
+#
+# at that point data contains 512 samples acquired at the given rate
+#
