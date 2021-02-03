@@ -21,15 +21,15 @@ def get_temp(pipe_sensor, pin=19):
     while True:
         result = instance.read()
         if result.is_valid():
-            pipe.send({'temperature' = result.temperature, 'humidity' = result.humidity})
+            pipe.send({'temperature':result.temperature, 'humidity':result.humidity})
         else:
-            pipe.send({'temperature' = "N/A", 'humidity' = "N/A"})
+            pipe.send({'temperature':"N/A", 'humidity':"N/A"})
         time.sleep(1)
 
 
 def get_time(pipe_sensor):
     while True:
-        pipe_sensor.send({'time' : time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
+        pipe_sensor.send({'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
         time.sleep(1)
 
 class Config(object):
