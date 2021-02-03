@@ -256,16 +256,16 @@ class GUI():
 
     def devices_status(self):
         # print devices status
-        pump_air_status=tk.Label(self.canvas_equipment, text="ON", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        pump_air_status.place(x=0,y=85,width=60, height=15)
-        pump1_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        pump1_status.place(x=80,y=85,width=60, height=15)
-        pump2_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        pump2_status.place(x=380,y=85,width=60, height=15)
-        magnetic_stirrer_status=tk.Label(self.canvas_equipment, text="OFF", anchor='e', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        magnetic_stirrer_status.place(x=180,y=190,width=60, height=15)
-        light_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        light_status.place(x=240,y=45,width=60, height=15)
+        self.pump_air_status=tk.Label(self.canvas_equipment, text="ON", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.pump_air_status.place(x=0,y=85,width=60, height=15)
+        self.pump1_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.pump1_status.place(x=80,y=85,width=60, height=15)
+        self.pump2_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.pump2_status.place(x=380,y=85,width=60, height=15)
+        self.magnetic_stirrer_status=tk.Label(self.canvas_equipment, text="OFF", anchor='e', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.magnetic_stirrer_status.place(x=180,y=190,width=60, height=15)
+        self.light_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.light_status.place(x=240,y=45,width=60, height=15)
 
     def liquid_level_mark(self):
         # 绘制最高最低水位标
@@ -456,6 +456,7 @@ class GUI():
         print(self.magnetic_stirrer_timer.get())
 
     def light_off(self):
+        self.light_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
         PIN_NO=21
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN_NO, GPIO.OUT)
@@ -463,6 +464,7 @@ class GUI():
         GPIO.cleanup(PIN_NO)
 
     def light_on(self):
+        self.light_status=tk.Label(self.canvas_equipment, text="ON", justify='center', font=self.ft10, bg='#FFFFFF', fg='#22FF22')
         print(self.light_timer.get())
         PIN_NO=21
         GPIO.setmode(GPIO.BCM)
