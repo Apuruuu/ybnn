@@ -7,7 +7,6 @@ from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
 import GUI_by_tkinter
-import GPIO_controller
 
 # initialize GPIO
 GPIO.setwarnings(True)
