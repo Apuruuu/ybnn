@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import dht11
+import Adafruit_ADS1x15
 
 import tkinter as tk
 import time
@@ -21,7 +22,18 @@ def get_temp(pipe_sensor, pin=19):
             pipe.send({'temperature':"N/A", 'humidity':"N/A"})
         time.sleep(1)
 
+def get_ADC_value(pipe_sensor):
+    adc = Adafruit_ADS1x15.ADS1115()
+    GAIN = 8
 
+    while True:
+        values = [0]*4
+        for i in range(4):
+            values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
+
+        pipe.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
+        time.sleep(1)
+        
 def get_time(pipe_sensor):
     while True:
         pipe_sensor.send({'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
