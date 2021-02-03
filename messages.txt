@@ -1,0 +1,17 @@
+時刻を変えた
+[info]yyyy-mm-dd hh:mm:ss(new time): Localtime chenged! +xxxxx [s] (by user)
+
+培養容器の水位閾値を変えた
+[info]yyyy-mm-dd hh:mm:ss: Container water level threshold change to L=[Low] H=[High] (by user)
+
+デバイス状態変化通知
+[info]yyyy-mm-dd hh:mm:ss: [device_name] [Open/Closed/On/Off/Run/Stopped] (by [user/timer/automatic])
+
+タイマー時間を増やした
+[info]yyyy-mm-dd hh:mm:ss: [device_name] timer + [seconds]s (by user)
+
+状態通知
+[info]yyyy-mm-dd hh:mm:ss: [sensor_name] [return value] [threshold]
+
+状態警告[限界超え]
+[warning]yyyy-mm-dd hh:mm:ss: [sensor_name] THRESHOLD EXCEEDED! now=[return value] [threshold]

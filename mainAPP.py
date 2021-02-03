@@ -1,20 +1,22 @@
 import RPi.GPIO as GPIO
 import dht11
 
-import tkinter
+import tkinter as tk
 import time
 import datetime
 
 from multiprocessing import Process, Pipe
 import time
-from unit.Temp import Tsensor
+
+import GUI_by_tkinter
+
+import random
 
 # initialize GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
 
-
-def get_temp(pipe, pin=19):
+def get_temp(pipe_sensor, pin=19):
     instance = dht11.DHT11(pin)
     while True:
         result = instance.read()
@@ -24,30 +26,58 @@ def get_temp(pipe, pin=19):
             pipe.send({'temperature' = "N/A", 'humidity' = "N/A"})
         time.sleep(1)
 
-def get_time(pip):
-    pipe.send({'time' = time.asctime})
-    time.sleep(1)
 
-def MainAPP(pipe):
-    cache = {}
+def get_time(pipe_sensor):
     while True:
-        data = pipe.recv()
-        cache = dict(cache, **data)
-        # print(cache)  #{'time': 'Sun Nov 29 16:54:28 2020', 'temp': 2}
+        pipe_sensor.send({'time' : time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
+        time.sleep(1)
 
+class Config(object):
+    def __init__(self):
+        print('0')
 
+class MainAPP(Config):
+    def __init__(self, pipe_sensor, pipe_main):
 
+        self.cache = {'temperature':'N/A', 
+                        'humidity':'N/A',
+                        'water_temperature':'N/A',
+                        'PH':'N/A',
+                        'lumen':'N/A',
+                        'time':'N/A',
+                        'turbidity':'N/A',
+                        'height':'N/A',
+                        }
+        while True:
+            data = pipe_sensor.recv()
+            if isinstance(data,dict):
+                self.cache = dict(self.cache, **data)
+            elif data == 'SHOW_ME_DATA':
+                pipe_main.send(self.cache)
+            else:
+                continue
+
+    def value(self):
+        return self.cache
+
+class MainGUI(MainAPP):
+    def __init__(self, pipe_sensor, pipe_main):
+        GUI_by_tkinter.GUI(pipe_sensor, pipe_main)
 
 if __name__ == '__main__':
-    pipe = Pipe()
-    mainapp = Process(target=MainAPP, args=(pipe[1],))
-    temp = Process(target=get_temp, args=(pipe[0],))
-    time = Process(target=get_time, args=(pipe[0],))
+    pipe_sensor = Pipe()
+    pipe_main = Pipe()
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1], pipe_main[0]))
+    temp = Process(target=get_temp, args=(pipe_sensor[0],))
+    time = Process(target=get_time, args=(pipe_sensor[0],))
+    maingui = Process(target=MainGUI, args=(pipe_sensor[0], pipe_main[1]))
 
     mainapp.start()
     temp.start()
     time.start()
+    maingui.start()
 
     mainapp.join()
     temp.join()
     time.join()
+    maingui.join()
