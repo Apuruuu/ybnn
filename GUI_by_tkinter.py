@@ -153,10 +153,10 @@ class GUI():
         message1_text.place(x=350,y=52,width=200,height=15)
 
     def top_bar_value(self):
-        Temperature_value=tk.Label(self.root, text='%.2f'%self.temperature, anchor='w', font=self.ft18, bg='#FFFFFF', fg='#000000')
+        Temperature_value=tk.Label(self.root, text=self.temperature[:5], anchor='w', font=self.ft18, bg='#FFFFFF', fg='#000000')
         Temperature_value.place(x=280,y=10,width=70,height=27)
 
-        humidity_value=tk.Label(self.root, text='%.2f'%self.humidity, anchor='w', font=self.ft18, bg='#FFFFFF', fg='#000000')
+        humidity_value=tk.Label(self.root, text=self.humidity[:5], anchor='w', font=self.ft18, bg='#FFFFFF', fg='#000000')
         humidity_value.place(x=280,y=37,width=70,height=27)
 
         local_time_value=tk.Label(self.root, text=self.local_time, anchor='w', font=self.ft18, bg='#FFFFFF', fg='#000000')
