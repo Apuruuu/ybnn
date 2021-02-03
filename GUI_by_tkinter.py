@@ -54,7 +54,17 @@ class GUI():
         self.top_bar_value()
         self.equipment_value()
         self.equipment_center_value_Value()
-        self.devices_status()
+        # self.devices_status()
+        self.pump_air_status=tk.Label(self.canvas_equipment)
+
+        self.pump1_status=tk.Label(self.canvas_equipment)
+
+        self.pump2_status=tk.Label(self.canvas_equipment)
+
+        self.magnetic_stirrer_status=tk.Label(self.canvas_equipment)
+
+        self.light_status=tk.Label(self.canvas_equipment)
+
         self.devices()
 
     def refresh_data(self):
