@@ -8,12 +8,13 @@ class GUI():
         self.pipe_sensor = pipe_sensor
         self.pipe_main = pipe_main
 
-        self.devices = [['light','off','0','','',''],
-                        ['pump_air','off','0','','',''],
-                        ['pump_1','off','0','','',''],
-                        ['pump2','off','0','','',''],
-                        ['magnetic_stitter','off','0','','',''],
-        ]
+        # 有重名冲突
+        # self.devices = [['light','off','0','','',''],
+        #                 ['pump_air','off','0','','',''],
+        #                 ['pump_1','off','0','','',''],
+        #                 ['pump2','off','0','','',''],
+        #                 ['magnetic_stitter','off','0','','',''],
+        # ]
 
         #setting title
         self.root.title("undefined")
