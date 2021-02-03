@@ -454,6 +454,7 @@ class GUI():
 
 
 import time
+from time import strftime
 from multiprocessing import Process, Pipe
 import random
 
@@ -466,7 +467,7 @@ def send_data(pipe_sensor, pipe_main):
                         'water_temperature':random.uniform(20.0,40.0),
                         'PH':random.uniform(3.0,9.0),
                         'lumen':random.uniform(0.0,10000.0),
-                        'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        'time':strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         'turbidity':random.uniform(0.0,100000.0),
                         'height':random.uniform(100.0,200.0),
                         }

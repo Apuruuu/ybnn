@@ -4,6 +4,7 @@ import Adafruit_ADS1x15
 
 import tkinter as tk
 import time
+from time import strftime
 
 from multiprocessing import Process, Pipe
 import GUI_by_tkinter
@@ -36,7 +37,7 @@ def get_ADC_value(pipe_sensor):
         
 def get_time(pipe_sensor):
     while True:
-        pipe_sensor.send({'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
+        pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
         time.sleep(1)
 
 class Config(object):
