@@ -3,9 +3,7 @@ import dht11
 import Adafruit_ADS1x15
 
 import tkinter as tk
-import time
-from time import strftime
-from time import localtime
+from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
 import GUI_by_tkinter
@@ -22,7 +20,7 @@ def get_temp(pipe_sensor, pin=19):
             pipe.send({'temperature':result.temperature, 'humidity':result.humidity})
         else:
             pipe.send({'temperature':"N/A", 'humidity':"N/A"})
-        time.sleep(1)
+        sleep(1)
 
 def get_ADC_value(pipe_sensor):
     adc = Adafruit_ADS1x15.ADS1115()
@@ -34,12 +32,12 @@ def get_ADC_value(pipe_sensor):
             values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
 
         pipe.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
-        time.sleep(1)
+        sleep(1)
         
 def get_time(pipe_sensor):
     while True:
         pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", localtime())})
-        time.sleep(1)
+        sleep(1)
 
 class Config(object):
     def __init__(self):
