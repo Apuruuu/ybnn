@@ -3,14 +3,9 @@ import dht11
 
 import tkinter as tk
 import time
-import datetime
 
 from multiprocessing import Process, Pipe
-import time
-
 import GUI_by_tkinter
-
-import random
 
 # initialize GPIO
 GPIO.setwarnings(True)
