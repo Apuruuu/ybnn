@@ -9,13 +9,13 @@ class GUI():
         self.pipe_sensor = pipe_sensor
         self.pipe_main = pipe_main
 
-        # 有重名冲突
-        # self.devices = [['light','off','0','','',''],
-        #                 ['pump_air','off','0','','',''],
-        #                 ['pump_1','off','0','','',''],
-        #                 ['pump2','off','0','','',''],
-        #                 ['magnetic_stitter','off','0','','',''],
-        # ]
+        self.GPIO_PIN = {'light':21,'pump_1':20,'pump_2':16,'pump_air':None,'magnetic_stitter':None}
+        self.DEVICES_STATUS_LIST = [['light','OFF','0','OFF','#FF2222',''],
+                                    ['pump_air','OFF','0','OFF','#FF2222',''],
+                                    ['pump_1','OFF','0','OFF','#FF2222',''],
+                                    ['pump2','OFF','0','OFF','#FF2222',''],
+                                    ['magnetic_stitter','OFF','0','OFF','#FF2222',''],
+        ]
 
         #setting title
         self.root.title("undefined")
@@ -54,17 +54,7 @@ class GUI():
         self.top_bar_value()
         self.equipment_value()
         self.equipment_center_value_Value()
-        # self.devices_status()
-        self.pump_air_status=tk.Label(self.canvas_equipment)
-
-        self.pump1_status=tk.Label(self.canvas_equipment)
-
-        self.pump2_status=tk.Label(self.canvas_equipment)
-
-        self.magnetic_stirrer_status=tk.Label(self.canvas_equipment)
-
-        self.light_status=tk.Label(self.canvas_equipment)
-
+        self.devices_status()
         self.devices()
 
     def refresh_data(self):
@@ -97,7 +87,27 @@ class GUI():
             self.turbidity_by_lumen = self.lumen
 
         self.update_GUI()
+        self.check_status()
+        print(self.DEVICES_STATUS_LIST)
         self.root.after(1000, self.refresh_data)   # 这里的10000单位为毫秒
+
+    def check_status(self):
+        for i in range(len(self.DEVICES_STATUS_LIST)):
+            if int(self.DEVICES_STATUS_LIST[i][2]) > 0 and self.DEVICES_STATUS_LIST[i][1] == 'OFF':
+                self.DEVICES_STATUS_LIST[i][1] = 'ON'
+                self.DEVICES_STATUS_LIST[i][3] = 'ON [%d s]'%int(self.DEVICES_STATUS_LIST[i][2])
+                self.DEVICES_STATUS_LIST[i][4] = '#22FF22'
+                self.Turn_ON(self.GPIO_PIN[self.DEVICES_STATUS_LIST[i][0]])
+
+            if int(self.DEVICES_STATUS_LIST[i][2]) > 0 and self.DEVICES_STATUS_LIST[i][1] == 'ON':
+                self.DEVICES_STATUS_LIST[i][2] = int(self.DEVICES_STATUS_LIST[i][2]) - 1
+                self.DEVICES_STATUS_LIST[i][3] = 'ON [%d s]'%int(self.DEVICES_STATUS_LIST[i][2])
+
+            if int(self.DEVICES_STATUS_LIST[i][2]) == 0 and self.DEVICES_STATUS_LIST[i][1] == 'ON':
+                self.DEVICES_STATUS_LIST[i][1] = 'OFF'
+                self.DEVICES_STATUS_LIST[i][3] = 'OFF'
+                self.DEVICES_STATUS_LIST[i][4] = '#FF2222'
+                self.Turn_OFF(self.GPIO_PIN[self.DEVICES_STATUS_LIST[i][0]])
 
     def get_value(self):
 ########################## setting ###########################
@@ -266,16 +276,16 @@ class GUI():
 
     def devices_status(self):
         # print devices status
-        self.pump_air_status=tk.Label(self.canvas_equipment, text="ON", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        self.pump_air_status.place(x=0,y=85,width=60, height=15)
-        self.pump1_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        self.pump1_status.place(x=80,y=85,width=60, height=15)
-        self.pump2_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        self.pump2_status.place(x=380,y=85,width=60, height=15)
-        self.magnetic_stirrer_status=tk.Label(self.canvas_equipment, text="OFF", anchor='e', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        self.magnetic_stirrer_status.place(x=180,y=190,width=60, height=15)
-        self.light_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
+        self.light_status=tk.Label(self.canvas_equipment, text=str(self.DEVICES_STATUS_LIST[0][3]), justify='center', font=self.ft10, bg='#FFFFFF', fg=str(self.DEVICES_STATUS_LIST[0][4]))
         self.light_status.place(x=240,y=45,width=60, height=15)
+        self.pump_air_status=tk.Label(self.canvas_equipment, text=str(self.DEVICES_STATUS_LIST[1][3]), justify='center', font=self.ft10, bg='#FFFFFF', fg=self.DEVICES_STATUS_LIST[1][4])
+        self.pump_air_status.place(x=0,y=85,width=60, height=15)
+        self.pump1_status=tk.Label(self.canvas_equipment, text=str(self.DEVICES_STATUS_LIST[2][3]), justify='center', font=self.ft10, bg='#FFFFFF', fg=self.DEVICES_STATUS_LIST[2][4])
+        self.pump1_status.place(x=80,y=85,width=60, height=15)
+        self.pump2_status=tk.Label(self.canvas_equipment, text=str(self.DEVICES_STATUS_LIST[3][3]), justify='center', font=self.ft10, bg='#FFFFFF', fg=self.DEVICES_STATUS_LIST[3][4])
+        self.pump2_status.place(x=380,y=85,width=60, height=15)
+        self.magnetic_stirrer_status=tk.Label(self.canvas_equipment, text=str(self.DEVICES_STATUS_LIST[4][3]), anchor='e', font=self.ft10, bg='#FFFFFF', fg=self.DEVICES_STATUS_LIST[4][4])
+        self.magnetic_stirrer_status.place(x=180,y=190,width=60, height=15)
 
     def liquid_level_mark(self):
         # 绘制最高最低水位标
@@ -466,20 +476,19 @@ class GUI():
         print(self.magnetic_stirrer_timer.get())
 
     def light_off(self):
-        self.light_status=tk.Label(self.canvas_equipment, text="OFF", justify='center', font=self.ft10, bg='#FFFFFF', fg='#000000')
-        PIN_NO=21
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(PIN_NO, GPIO.OUT)
-        GPIO.output(PIN_NO,GPIO.LOW)
-        GPIO.cleanup(PIN_NO)
+        self.DEVICES_STATUS_LIST[0][2] = 0
 
     def light_on(self):
-        self.light_status=tk.Label(self.canvas_equipment, text="ON", justify='center', font=self.ft10, bg='#FFFFFF', fg='#22FF22')
-        print(self.light_timer.get())
-        PIN_NO=21
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(PIN_NO, GPIO.OUT)
-        GPIO.output(PIN_NO,GPIO.HIGH)
+        self.DEVICES_STATUS_LIST[0][2] = int(self.light_timer.get())
+
+    def Turn_ON(self,PIN):
+        GPIO.setup(PIN, GPIO.OUT)
+        GPIO.output(PIN, GPIO.HIGH)
+
+    def Turn_OFF(self,PIN):
+        GPIO.setup(PIN, GPIO.OUT)
+        GPIO.output(PIN, GPIO.LOW)
+        GPIO.cleanup(PIN)
 
 
 import time
@@ -503,9 +512,6 @@ def send_data(pipe_sensor, pipe_main):
                 pipe_main.send(cache)
 
 if __name__ == "__main__":
-
-
-
     pipe_sensor = Pipe()
     pipe_main = Pipe()
     sender = Process(target=send_data, args=(pipe_sensor[1], pipe_main[0]))
