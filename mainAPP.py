@@ -17,9 +17,9 @@ def get_temp(pipe_sensor, pin=19):
     while True:
         result = instance.read()
         if result.is_valid():
-            pipe.send({'temperature':result.temperature, 'humidity':result.humidity})
+            pipe_sensor.send({'temperature':result.temperature, 'humidity':result.humidity})
         else:
-            pipe.send({'temperature':"N/A", 'humidity':"N/A"})
+            pipe_sensor.send({'temperature':"N/A", 'humidity':"N/A"})
         sleep(1)
 
 def get_ADC_value(pipe_sensor):
@@ -31,7 +31,7 @@ def get_ADC_value(pipe_sensor):
         for i in range(4):
             values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
 
-        pipe.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
+        pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
         sleep(1)
         
 def get_time(pipe_sensor):
