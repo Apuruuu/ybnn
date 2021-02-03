@@ -96,7 +96,7 @@ class GUI():
             if int(self.DEVICES_STATUS_LIST[i][2]) > 0 and self.DEVICES_STATUS_LIST[i][1] == 'OFF':
                 self.DEVICES_STATUS_LIST[i][1] = 'ON'
                 self.DEVICES_STATUS_LIST[i][3] = 'ON [%d s]'%int(self.DEVICES_STATUS_LIST[i][2])
-                self.DEVICES_STATUS_LIST[i][4] = '#22FF22'
+                self.DEVICES_STATUS_LIST[i][4] = '#22DD22'
                 self.Turn_ON(self.GPIO_PIN[self.DEVICES_STATUS_LIST[i][0]])
 
             if int(self.DEVICES_STATUS_LIST[i][2]) > 0 and self.DEVICES_STATUS_LIST[i][1] == 'ON':
