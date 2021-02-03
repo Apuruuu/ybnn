@@ -3,6 +3,7 @@ import dht11
 import Adafruit_ADS1x15
 
 import tkinter as tk
+import time
 from time import strftime
 from time import localtime
 
