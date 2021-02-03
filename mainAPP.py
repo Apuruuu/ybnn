@@ -68,13 +68,14 @@ class MainAPP(Config):
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_main):
         self.pipe_main = pipe_main
-        data = pipe_sensor.recv()
-        if isinstance(data,tuple):
-            GPIO_controller.GPIO_CONT(data)
-        else:
-            continue
-        _command = {'device':data[0], 'turn_to':data[1], 'timer':data[2], 'keep1':'', 'keep2':'', 'keep3':''}
+        while True:
+            data = pipe_sensor.recv()
+            if isinstance(data,tuple):
+                _command = {'device':data[0], 'turn_to':data[1], 'timer':data[2], 'keep1':'', 'keep2':'', 'keep3':''}
+            else:
+                continue
 
+            
         self.GPIO_PIN = {'light':21,'pump_1':20,'pump_2':16,'pump_air':None,'magnetic_stitter':None}
 
         self.devices = [['light','off','0','','',''],
