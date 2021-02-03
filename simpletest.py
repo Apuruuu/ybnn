@@ -16,4 +16,4 @@ while True:
     
      print('AVG: %f |   |NF %f |R %f |G %f |B %f |' %(avg(values[0],values[1],values[2],values[3]),values[0],values[1],values[2],values[3]))
      
-     time.sleep(0.001)
+     time.sleep(0.1)
