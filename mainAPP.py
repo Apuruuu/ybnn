@@ -7,6 +7,7 @@ from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
 import GUI_by_tkinter
+import GPIO_controller
 
 # initialize GPIO
 GPIO.setwarnings(True)
@@ -20,7 +21,7 @@ def get_temp(pipe_sensor, pin=19):
             pipe_sensor.send({'temperature':result.temperature, 'humidity':result.humidity})
         else:
             pipe_sensor.send({'temperature':"N/A", 'humidity':"N/A"})
-        sleep(1)
+        sleep(5)
 
 def get_ADC_value(pipe_sensor):
     adc = Adafruit_ADS1x15.ADS1115()
@@ -41,7 +42,7 @@ def get_time(pipe_sensor):
 
 class Config(object):
     def __init__(self):
-        print('0')
+        pass
 
 class MainAPP(Config):
     def __init__(self, pipe_sensor, pipe_main):
@@ -64,9 +65,54 @@ class MainAPP(Config):
             else:
                 continue
 
-class MainGUI(MainAPP):
-    def __init__(self, pipe_sensor, pipe_main):
-        GUI_by_tkinter.GUI(pipe_sensor, pipe_main)
+class GPIO_CONT():
+    def __init__(self,pipe_sensor,pipe_main):
+        self.pipe_main = pipe_main
+        data = pipe_sensor.recv()
+        if isinstance(data,tuple):
+            GPIO_controller.GPIO_CONT(data)
+        else:
+            continue
+        _command = {'device':data[0], 'turn_to':data[1], 'timer':data[2], 'keep1':'', 'keep2':'', 'keep3':''}
+
+        self.GPIO_PIN = {'light':21,'pump_1':20,'pump_2':16,'pump_air':None,'magnetic_stitter':None}
+
+        self.devices = [['light','off','0','','',''],
+                        ['pump_air','off','0','','',''],
+                        ['pump_1','off','0','','',''],
+                        ['pump2','off','0','','',''],
+                        ['magnetic_stitter','off','0','','',''],
+        ]
+
+            
+
+    def check_status(self):
+        for i in range(len(self.devices)):
+            if int(self.devices[i,2]) == 0 and self.devices[i,1] == 'off':
+                continue
+
+            if int(self.devices[i,2]) > 0 and self.devices[i,1] == 'off':
+                self.devices[i,2] = int(self.devices[i,2]) - 1
+                self.Turn_ON(self.GPIO_PIN[self.devices[i,0]])
+
+            if int(self.devices[i,2]) == 0 and self.devices[i,1] == 'on':
+                self.Turn_OFF(self.GPIO_PIN[self.devices[i,0]])
+
+        self.pipe_main.send(self.devices)
+
+    def Turn_ON(self,pin):
+        GPIO.setup(PIN, GPIO.OUT)
+        GPIO.output(PIN, GPIO.HIGH)
+
+    def Turn_OFF(self,pin):
+        GPIO.setup(PIN, GPIO.OUT)
+        GPIO.output(PIN, GPIO.LOW)
+        GPIO.cleanup(pin)
+
+
+# class MainGUI(MainAPP):
+#     def __init__(self, pipe_sensor, pipe_main):
+#         GUI_by_tkinter.GUI(pipe_sensor, pipe_main)
 
 if __name__ == '__main__':
     pipe_sensor = Pipe()
@@ -75,17 +121,19 @@ if __name__ == '__main__':
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     time = Process(target=get_time, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    maingui = Process(target=MainGUI, args=(pipe_sensor[0], pipe_main[1]))
+    maingui = Process(target=GUI_by_tkinter.GUI, args=(pipe_sensor[0], pipe_main[1]))
+    # gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[1], pipe_main[0],))
     
-
     mainapp.start()
     temp.start()
     time.start()
     adc.start()
     maingui.start()
+    # gpio_cont.start()
 
     mainapp.join()
     temp.join()
     time.join()
     adc.join()
     maingui.join()
+    # gpio_cont.join()

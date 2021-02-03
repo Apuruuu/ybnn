@@ -8,6 +8,13 @@ class GUI():
         self.pipe_sensor = pipe_sensor
         self.pipe_main = pipe_main
 
+        self.devices = [['light','off','0','','',''],
+                        ['pump_air','off','0','','',''],
+                        ['pump_1','off','0','','',''],
+                        ['pump2','off','0','','',''],
+                        ['magnetic_stitter','off','0','','',''],
+        ]
+
         #setting title
         self.root.title("undefined")
         #setting window size
@@ -447,10 +454,18 @@ class GUI():
         print(self.magnetic_stirrer_timer.get())
 
     def light_off(self):
-        return 0
+        PIN_NO=21
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(PIN_NO, GPIO.OUT)
+        GPIO.output(PIN_NO,GPIO.LOW)
+        GPIO.cleanup(PIN_NO)
 
     def light_on(self):
         print(self.light_timer.get())
+        PIN_NO=21
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(PIN_NO, GPIO.OUT)
+        GPIO.output(PIN_NO,GPIO.HIGH)
 
 
 import time
