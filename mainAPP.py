@@ -8,6 +8,9 @@ from time import strftime, localtime, sleep
 from multiprocessing import Process, Pipe
 import GUI_by_tkinter
 
+import socket
+import 
+
 # initialize GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
@@ -45,6 +48,8 @@ class Config(object):
 
 class MainAPP(Config):
     def __init__(self, pipe_sensor, pipe_main):
+        if self.device_class = 'zhixin':
+            self.UDP_sender()
 
         cache = {'temperature':'N/A', 
                         'humidity':'N/A',
@@ -55,14 +60,29 @@ class MainAPP(Config):
                         'turbidity':'N/A',
                         'height':'N/A',
                         }
+
         while True:
             data = pipe_sensor.recv()
             if isinstance(data,dict):
                 cache = dict(cache, **data)
+                if self.device_class = 'zhixin':
+                    self.UDP_sender(cache)
             elif data == 'SHOW_ME_DATA':
                 pipe_main.send(cache)
             else:
                 continue
+
+    # UDP发送端
+    def UDP_sender(self,cache):
+        buffersize=1024
+        server=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server.bind(self.IP_address,self.port)
+
+    # UDP接收器
+    def UDP_(self):
+
+
+        
 
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_main):
@@ -107,12 +127,7 @@ class GPIO_CONT():
     def Turn_OFF(self,pin):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(pin)
-
-
-# class MainGUI(MainAPP):
-#     def __init__(self, pipe_sensor, pipe_main):
-#         GUI_by_tkinter.GUI(pipe_sensor, pipe_main)
+        GPIO.cleanup(pin)    
 
 if __name__ == '__main__':
     pipe_sensor = Pipe()
