@@ -13,6 +13,7 @@ from multiprocessing import Process, Pipe
 # initialize GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
+I2C = busio.I2C(board.SCL, board.SDA)
 
 def get_temp(pipe_sensor, pin=19):
     instance = dht11.DHT11(pin)
@@ -27,7 +28,7 @@ def get_temp(pipe_sensor, pin=19):
         sleep(5)
 
 def get_ADC_value(pipe_sensor):
-    adc = Adafruit_ADS1x15.ADS1115()
+    adc = Adafruit_ADS1x15.ADS1115(i2c=I2C)
     GAIN = 8
 
     while True:
