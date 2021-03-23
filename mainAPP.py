@@ -5,7 +5,7 @@ import dht11
 from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
-import Adafruit_ADS1x15.ADS1x15 as ADS1x15
+from Adafruit_ADS1x15 import ADS1115
 # import GUI_by_tkinter
 
 # import socket
@@ -30,7 +30,7 @@ def get_temp(pipe_sensor, pin=19):
 def get_ADC_value(pipe_sensor):
 
 
-    adc = ADS1x15.ADS1115()
+    adc = ADS1115()
     # Choose a gain of 1 for reading voltages from 0 to 4.09V.
     # Or pick a different gain to change the range of voltages that are read:
     #  - 2/3 = +/-6.144V
