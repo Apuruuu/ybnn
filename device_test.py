@@ -1,25 +1,25 @@
 import RPi.GPIO as GPIO
-from time import time as t
+from time import time, sleep
 
 def Get_depth(pin):
     GPIO.setup(pin, GPIO.OUT)
 
     GPIO.output(pin, GPIO.LOW)
-    time.sleep(0.2)
+    sleep(0.2)
     GPIO.output(pin, GPIO.HIGH)
-    time.sleep(0.5)
+    sleep(0.5)
     GPIO.output(pin, GPIO.LOW)
-    start = t()
+    start = time()
 
     # setup pin as input
     GPIO.setup(pin, GPIO.IN)
 
     # get duration from Ultrasonic SIG pin
     while GPIO.input(pin) == 0:
-        start = t()
+        start = time()
 
     while GPIO.input(pin) == 1:
-        end = t()
+        end = time()
 
     # Calculate pulse length
     time_difference = end-start
