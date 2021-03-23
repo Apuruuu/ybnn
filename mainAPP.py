@@ -1,11 +1,8 @@
 import RPi.GPIO as GPIO
-import dht11
-
 # import tkinter as tk
 from time import strftime, localtime, sleep
-
 from multiprocessing import Process, Pipe
-import Adafruit_ADS1x15
+
 # import GUI_by_tkinter
 
 # import socket
@@ -16,7 +13,9 @@ GPIO.setmode(GPIO.BCM)
 # I2C = busio.I2C(board.SCL, board.SDA)
 
 def get_temp(pipe_sensor, pin=19):
-    instance = dht11.DHT11(pin)
+    import units.dht11
+
+    instance = units.dht11.DHT11(pin)
     while True:
         result = instance.read()
         if result.is_valid():
@@ -28,9 +27,9 @@ def get_temp(pipe_sensor, pin=19):
         sleep(5)
 
 def get_ADC_value(pipe_sensor):
+    import units.ADS1x15
 
-
-    adc = Adafruit_ADS1x15.ADS1115()
+    adc = units.ADS1x15.ADS1115()
     # Choose a gain of 1 for reading voltages from 0 to 4.09V.
     # Or pick a different gain to change the range of voltages that are read:
     #  - 2/3 = +/-6.144V
