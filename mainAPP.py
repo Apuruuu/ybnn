@@ -1,7 +1,5 @@
 import RPi.GPIO as GPIO
 import dht11
-import board
-import busio
 
 # import tkinter as tk
 from time import strftime, localtime, sleep
