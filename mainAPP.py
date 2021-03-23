@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import dht11
 import Adafruit_ADS1x15
 
-import tkinter as tk
+# import tkinter as tk
 from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
