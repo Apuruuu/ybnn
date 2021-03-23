@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-import time.time as t
+from time import time as t
 
 def Get_depth(pin):
     GPIO.setup(pin, GPIO.OUT)
