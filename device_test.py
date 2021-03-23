@@ -1,10 +1,7 @@
 import RPi.GPIO as GPIO
-import time
-
+import time.time as t
 
 def Get_depth(pin):
-
-    # setup the pin as output
     GPIO.setup(pin, GPIO.OUT)
 
     GPIO.output(pin, GPIO.LOW)
@@ -12,33 +9,27 @@ def Get_depth(pin):
     GPIO.output(pin, GPIO.HIGH)
     time.sleep(0.5)
     GPIO.output(pin, GPIO.LOW)
-    start = time.time()
+    start = t()
 
     # setup pin as input
     GPIO.setup(pin, GPIO.IN)
 
     # get duration from Ultrasonic SIG pin
     while GPIO.input(pin) == 0:
-        start = time.time()
+        start = t()
 
     while GPIO.input(pin) == 1:
-        stop = time.time()
+        end = t()
 
     # Calculate pulse length
-    elapsed = stop-start
+    time_difference = end-start
+    depth = (time_difference * 340000) / 2
 
-    # Distance pulse travelled in that time is time
-    # multiplied by the speed of sound (cm/s)
-    distance = elapsed * 340000
-
-    # That was the distance there and back so halve the value
-    distance = distance / 2
-
-    print("Distance : %.1f MM" % distance)
-
+    return depth
 
 if __name__ == '__main__':
     GPIO.setwarnings(True)
     GPIO.setmode(GPIO.BCM)
     pin = 26
-    Get_depth(pin)
+    depth = Get_depth(pin)
+    print("Distance : %.1f mm" % depth)
