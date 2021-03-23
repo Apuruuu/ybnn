@@ -6,10 +6,9 @@ import tkinter as tk
 from time import strftime, localtime, sleep
 
 from multiprocessing import Process, Pipe
-import GUI_by_tkinter
+# import GUI_by_tkinter
 
-import socket
-import 
+# import socket
 
 # initialize GPIO
 GPIO.setwarnings(True)
@@ -21,8 +20,10 @@ def get_temp(pipe_sensor, pin=19):
         result = instance.read()
         if result.is_valid():
             pipe_sensor.send({'temperature':result.temperature, 'humidity':result.humidity})
+            print(result.temperature,result.humidity)
         else:
             pipe_sensor.send({'temperature':"N/A", 'humidity':"N/A"})
+            print('nodata')
         sleep(5)
 
 def get_ADC_value(pipe_sensor):
@@ -34,52 +35,53 @@ def get_ADC_value(pipe_sensor):
         for i in range(4):
             values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
 
-        pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
+        # pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
+        print('adc',values)
         sleep(1)
         
 def get_time(pipe_sensor):
     while True:
-        pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", localtime())})
+        # pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", localtime())})
         sleep(1)
 
 class Config(object):
     def __init__(self):
         pass
 
-class MainAPP(Config):
-    def __init__(self, pipe_sensor, pipe_main):
-        if self.device_class = 'zhixin':
-            self.UDP_sender()
+# class MainAPP(Config):
+    # def __init__(self, pipe_sensor, pipe_main):
+    #     if self.device_class = 'zhixin':
+    #         self.UDP_sender()
 
-        cache = {'temperature':'N/A', 
-                        'humidity':'N/A',
-                        'water_temperature':'N/A',
-                        'PH':'N/A',
-                        'lumen':'N/A',
-                        'time':'N/A',
-                        'turbidity':'N/A',
-                        'height':'N/A',
-                        }
+    #     cache = {'temperature':'N/A', 
+    #                     'humidity':'N/A',
+    #                     'water_temperature':'N/A',
+    #                     'PH':'N/A',
+    #                     'lumen':'N/A',
+    #                     'time':'N/A',
+    #                     'turbidity':'N/A',
+    #                     'height':'N/A',
+    #                     }
 
-        while True:
-            data = pipe_sensor.recv()
-            if isinstance(data,dict):
-                cache = dict(cache, **data)
-                if self.device_class = 'zhixin':
-                    self.UDP_sender(cache)
-            elif data == 'SHOW_ME_DATA':
-                pipe_main.send(cache)
-            else:
-                continue
+    #     while True:
+    #         data = pipe_sensor.recv()
+    #         if isinstance(data,dict):
+    #             cache = dict(cache, **data)
+    #             if self.device_class = 'zhixin':
+    #                 self.UDP_sender(cache)
+    #         elif data == 'SHOW_ME_DATA':
+    #             pipe_main.send(cache)
+    #         else:
+    #             continue
 
-    # UDP发送端
-    def UDP_sender(self,cache):
-        buffersize=1024
-        server=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        server.bind(self.IP_address,self.port)
+    # # UDP发送端
+    # def UDP_sender(self,cache):
+    #     buffersize=1024
+    #     server=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #     server.bind(self.IP_address,self.port)
 
-    # UDP接收器
-    def UDP_(self):
+    # # UDP接收器
+    # def UDP_(self):
 
 
         
@@ -132,23 +134,23 @@ class GPIO_CONT():
 if __name__ == '__main__':
     pipe_sensor = Pipe()
     pipe_main = Pipe()
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1], pipe_main[0]))
+    # mainapp = Process(target=MainAPP, args=(pipe_sensor[1], pipe_main[0]))
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     time = Process(target=get_time, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    maingui = Process(target=GUI_by_tkinter.GUI, args=(pipe_sensor[0], pipe_main[1]))
+    # maingui = Process(target=GUI_by_tkinter.GUI, args=(pipe_sensor[0], pipe_main[1]))
     # gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[1], pipe_main[0],))
     
-    mainapp.start()
+    # mainapp.start()
     temp.start()
     time.start()
     adc.start()
-    maingui.start()
+    # maingui.start()
     # gpio_cont.start()
 
-    mainapp.join()
+    # mainapp.join()
     temp.join()
     time.join()
     adc.join()
-    maingui.join()
+    # maingui.join()
     # gpio_cont.join()
