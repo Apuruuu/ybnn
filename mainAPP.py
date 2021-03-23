@@ -12,7 +12,7 @@ from multiprocessing import Process, Pipe
 # initialize GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
-I2C = busio.I2C(board.SCL, board.SDA)
+# I2C = busio.I2C(board.SCL, board.SDA)
 
 def get_temp(pipe_sensor, pin=19):
     instance = dht11.DHT11(pin)
