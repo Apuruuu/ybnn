@@ -92,8 +92,4 @@ def measurementPulse(start, stop):
 
 
 if __name__ == '__main__':
-    # rpi board gpio or bcm gpio
-    GPIO.setmode(GPIO.BOARD)
-
-    # loop method
     getAndPrint()
