@@ -1,6 +1,5 @@
 import RPi.GPIO as GPIO
 import dht11
-import Adafruit_ADS1x15
 import board
 import busio
 
@@ -30,16 +29,26 @@ def get_temp(pipe_sensor, pin=19):
         sleep(5)
 
 def get_ADC_value(pipe_sensor):
-    adc = Adafruit_ADS1x15.ADS1115(i2c=I2C)
-    GAIN = 8
+    import adafruit_ads1x15.ads1015 as ADS
+    from adafruit_ads1x15.analog_in import AnalogIn
+
+    # Create the I2C bus
+    i2c = busio.I2C(board.SCL, board.SDA)
+
+    # Create the ADC object using the I2C bus
+    ads = ADS.ADS1015(i2c)
+
+    # Create single-ended input on channel 0
+    chan = AnalogIn(ads, ADS.P0)
+
+    # Create differential input between channel 0 and 1
+    # chan = AnalogIn(ads, ADS.P0, ADS.P1)
+
+    print("{:>5}\t{:>5}".format("raw", "v"))
 
     while True:
-        values = [0]*4
-        for i in range(4):
-            values[i] = adc.read_adc(i, gain=GAIN) * 0.512 / 2**15 
-
+        print("{:>5}\t{:>5.3f}".format(chan.value, chan.voltage))
         # pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
-        print('adc',values)
         sleep(1)
         
 def get_time(pipe_sensor):
