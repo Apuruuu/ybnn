@@ -36,7 +36,7 @@ GPIO_SIG = 26
 
 def getAndPrint():
 
-    print "SeeedStudio Grove Ultrasonic get data and print"
+    print("SeeedStudio Grove Ultrasonic get data and print")
 
     # test 100 times
     for i in range(100):
@@ -73,7 +73,7 @@ def measurementInCM():
 
 def measurementPulse(start, stop):
 
-    print "Ultrasonic Measurement"
+    print("Ultrasonic Measurement")
 
     # Calculate pulse length
     elapsed = stop-start
@@ -85,7 +85,7 @@ def measurementPulse(start, stop):
     # That was the distance there and back so halve the value
     distance = distance / 2
 
-    print "Distance : %.1f CM" % distance
+    print("Distance : %.1f CM" % distance)
 
 
 if __name__ == '__main__':
