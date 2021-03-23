@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
 import dht11
 import Adafruit_ADS1x15
+import board
 
 # import tkinter as tk
 from time import strftime, localtime, sleep
