@@ -29,7 +29,7 @@ def Get_depth(pin):
 
     # Distance pulse travelled in that time is time
     # multiplied by the speed of sound (cm/s)
-    distance = elapsed * 3430000
+    distance = elapsed * 340000
 
     # That was the distance there and back so halve the value
     distance = distance / 2
