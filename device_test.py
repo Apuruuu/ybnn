@@ -12,10 +12,11 @@ def Get_depth(pin):
     GPIO.output(pin, GPIO.HIGH)
     time.sleep(0.5)
     GPIO.output(pin, GPIO.LOW)
-    start = time.time()
+    
 
     # setup pin as input
     GPIO.setup(pin, GPIO.IN)
+    start = time.time()
 
     # get duration from Ultrasonic SIG pin
     while GPIO.input(pin) == 0:
