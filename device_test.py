@@ -31,6 +31,9 @@
 import RPi.GPIO as GPIO
 import time
 
+GPIO.setwarnings(True)
+GPIO.setmode(GPIO.BCM)
+
 GPIO_SIG = 26
 
 
@@ -39,7 +42,7 @@ def getAndPrint():
     print("SeeedStudio Grove Ultrasonic get data and print")
 
     # test 100 times
-    for i in range(100):
+    for i in range(10):
         measurementInCM()
 
     # Reset GPIO settings
