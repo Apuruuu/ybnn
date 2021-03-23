@@ -1,1 +1,1 @@
-from .Adafruit_ADS1x15 import *
+from .ADS1x15 import ADS1115, ADS1015
