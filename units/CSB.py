@@ -30,6 +30,6 @@ def Get_depth(pin):
 if __name__ == '__main__':
     GPIO.setwarnings(True)
     GPIO.setmode(GPIO.BCM)
-    pin = 26
+    pin = 27
     depth = Get_depth(pin)
     print("Distance : %.1f mm" % depth)

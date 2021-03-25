@@ -12,7 +12,7 @@ GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
 # I2C = busio.I2C(board.SCL, board.SDA)
 
-def get_temp(pipe_sensor, pin=19):
+def get_temp(pipe_sensor, pin=17):
     import units.dht11
 
     instance = units.dht11.DHT11(pin)
