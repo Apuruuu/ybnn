@@ -65,7 +65,11 @@ def get_ADC_value(pipe_sensor):
 
         # pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
 
-        
+def get_depth(pipe_sensor):
+    pin = 26
+    depth = Get_depth(pin)
+
+
 def get_time(pipe_sensor):
     while True:
         # pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", localtime())})
@@ -181,3 +185,9 @@ if __name__ == '__main__':
     adc.join()
     # maingui.join()
     # gpio_cont.join()
+
+
+
+
+# 结束子进程？
+    # p.process.signal(signal.SIGINT)

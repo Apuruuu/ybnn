@@ -3,7 +3,7 @@ import os
 
 class Config(object):
     def __init__(self):
-        self.load_config
+        self.load_config()
 
 
 
@@ -14,3 +14,5 @@ class Config(object):
 
         # open json file
         json_file=json.load(open(self.config_file_path))
+
+        device_class = json_file.get('device_class')
