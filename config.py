@@ -1,18 +1,20 @@
 import json
 import os
 
+import configparser
+
+
 class Config(object):
     def __init__(self):
+        self.config_file_path = 'config.cfg'
         self.load_config()
 
-
-
     def load_config(self):
-        if not os.walk(config_file_path):
-            json_file=open(config_file_path)
+        # 检测是否存在config.cfg文件
+        if not os.walk(self.config_file_path):
+            json_file=open(self.config_file_path)
             # 写入默认配置文件
 
-        # open json file
-        json_file=json.load(open(self.config_file_path))
-
-        device_class = json_file.get('device_class')
+        # 读取config文件
+        self.conf = configparser.ConfigParser()
+        self.conf.read(self.config_file_path)

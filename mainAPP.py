@@ -1,121 +1,160 @@
 import RPi.GPIO as GPIO
-# import tkinter as tk
-from time import strftime, localtime, sleep
+from time
 from multiprocessing import Process, Pipe
 
-# import GUI_by_tkinter
+import socket
+import configparser
 
-# import socket
-
-# initialize GPIO
+# 初始化GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
-# I2C = busio.I2C(board.SCL, board.SDA)
 
-def get_temp(pipe_sensor, pin=17):
+class Config(object):
+    def __init__(self):
+        self.config_file_path = 'config.cfg'
+        if not os.walk(self.config_file_path):
+            with open(self.config_file_path) as config_file:
+                # 写入默认配置文件
+                config_file.close()
+                pass
+        self.read()
+
+    # 读取config文件
+    def read(self):
+        self.conf = configparser.ConfigParser()
+        self.conf.read(self.config_file_path)
+
+    def write(self,name1,name2,value):
+        self.conf.set(name1, name2, value)
+        print(self.conf.get('UDP server','LOCALHOST'))
+        with open(self.config_file_path,'w') as config_file:
+            self.conf.write(config_file)
+            config_file.close()
+
+def get_temp(pipe_sensor):
     import units.dht11
 
+    pin=int(Config().conf.get('GPIO_PIN','DHT11'))
     instance = units.dht11.DHT11(pin)
+    Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
+
     while True:
         result = instance.read()
         if result.is_valid():
-            pipe_sensor.send({'temperature':result.temperature, 'humidity':result.humidity})
+            pipe_sensor.send({'time':get_time(),
+                                'temperature':result.temperature,
+                                'humidity':result.humidity})
             print(result.temperature,result.humidity)
         else:
-            pipe_sensor.send({'temperature':"N/A", 'humidity':"N/A"})
+            pipe_sensor.send({'time':get_time(),
+                                'temperature':"N/A",
+                                'humidity':"N/A"})
             print('nodata')
-        sleep(5)
+        time.sleep(Wait_time)
 
 def get_ADC_value(pipe_sensor):
     import units.ADS1x15
 
     adc = units.ADS1x15.ADS1115()
-    # Choose a gain of 1 for reading voltages from 0 to 4.09V.
-    # Or pick a different gain to change the range of voltages that are read:
-    #  - 2/3 = +/-6.144V
-    #  -   1 = +/-4.096V
-    #  -   2 = +/-2.048V
-    #  -   4 = +/-1.024V
-    #  -   8 = +/-0.512V
-    #  -  16 = +/-0.256V
-    # See table 3 in the ADS1015/ADS1115 datasheet for more info on gain.
-    GAIN = 1
+    GAIN = Config().conf.get('ADC','GAIN')
+    Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
 
-    # Print nice channel column headers.
-    print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*range(4)))
-    print('-' * 37)
-    # Main loop.
     while True:
-        # Read all the ADC channel values in a list.
+        # 读取ADC所有信道的值
         values = [0]*4
         for i in range(4):
-            # Read the specified ADC channel using the previously set gain value.
             values[i] = adc.read_adc(i, gain=GAIN)
-            # Note you can also pass in an optional data_rate parameter that controls
-            # the ADC conversion time (in samples/second). Each chip has a different
-            # set of allowed data rate values, see datasheet Table 9 config register
-            # DR bit values.
-            #values[i] = adc.read_adc(i, gain=GAIN, data_rate=128)
-            # Each value will be a 12 or 16 bit signed integer value depending on the
-            # ADC (ADS1015 = 12-bit, ADS1115 = 16-bit).
-        # Print the ADC values.
         print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
-        # Pause for half a second.
-        sleep(2)
+        pipe_sensor.send({'time':get_time(),
+                        'PH':values[0],
+                        'turbidity':values[1],
+                        'ADC3_A2':values[2],
+                        'ADC4_A3':values[3]})
+        time.sleep(Wait_time)
 
-        # pipe_sensor.send({'turbidity':values[0], 'PH':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]})
+def get_height(pipe_sensor):
+    import units.Ultrasonic_ranger
 
-def get_depth(pipe_sensor):
-    pin = 26
-    depth = Get_depth(pin)
+    pin = int(Config().conf.get('GPIO_PIN','UR'))
+    Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
 
-
-def get_time(pipe_sensor):
     while True:
-        # pipe_sensor.send({'time':strftime("%Y-%m-%d %H:%M:%S", localtime())})
-        sleep(1)
+        height = units.Ultrasonic_ranger.Get_depth(pin)
+        pipe_sensor.send({'time':get_time(),
+                            'height':height})
+        time.sleep(Wait_time)
 
-class Config(object):
+
+def get_time():
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+class MainAPP(Config):
+    def __init__(self, pipe_sensor):
+        self.stauts = {'time':'N/A',
+                'temperature':'N/A', 
+                'humidity':'N/A',
+                'water_temperature':'N/A',
+                'PH':'N/A',
+                'lumen':'N/A',
+                'turbidity':'N/A',
+                'height':'N/A',
+                'light':0
+                'pump_air':0
+                'pump_1':0
+                'pump2':0
+                'magnetic_stitter':0
+                }
+
+        cache_file_path = os.path.join(str(Config().conf.get('DEFULT_CACHE_PATH')),
+                                        str(get_time())+'.txt'),
+        with open(cache_file_path, 'w') as cache_file
+        while True:
+            data = pipe_sensor.recv()
+            if isinstance(data,dict):
+                # 写入文件
+                cache_file.write(data)
+                cache_file.write('\n')
+
+                self.stauts = dict(self.stauts, **data)
+            else:
+                continue
+
+class UDP_server(Config):
     def __init__(self):
-        pass
+        self.Get_local_IP()
+        print("Localhost_IP = ",self.Localhost)
 
-# class MainAPP(Config):
-    # def __init__(self, pipe_sensor, pipe_main):
-    #     if self.device_class = 'zhixin':
-    #         self.UDP_sender()
+        self.ip_cache = []
+        self.add_new_client(None,None)
 
-    #     cache = {'temperature':'N/A', 
-    #                     'humidity':'N/A',
-    #                     'water_temperature':'N/A',
-    #                     'PH':'N/A',
-    #                     'lumen':'N/A',
-    #                     'time':'N/A',
-    #                     'turbidity':'N/A',
-    #                     'height':'N/A',
-    #                     }
+        self.port = int(Config().conf.get('UDP server','PORT'))
+        self.send_to_IP = [] #[[IP,port],...]
 
-    #     while True:
-    #         data = pipe_sensor.recv()
-    #         if isinstance(data,dict):
-    #             cache = dict(cache, **data)
-    #             if self.device_class = 'zhixin':
-    #                 self.UDP_sender(cache)
-    #         elif data == 'SHOW_ME_DATA':
-    #             pipe_main.send(cache)
-    #         else:
-    #             continue
+    def Get_local_IP(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            self.Localhost = s.getsockname()[0]
+            Config().write('UDP server','LOCALHOST',self.Localhost)
+            print('Localhost =', self.Localhost,":",Config().conf.get('UDP server','PORT'))
 
-    # # UDP发送端
-    # def UDP_sender(self,cache):
-    #     buffersize=1024
-    #     server=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #     server.bind(self.IP_address,self.port)
+        finally:
+            s.close()
 
-    # # UDP接收器
-    # def UDP_(self):
+    def server(self):
+        server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
+        data=server.recv(1024) #一次接收1024字节
+        print(data.decode())# decode()解码收到的字节
 
-
-        
+    def add_new_client(self, ip, port):
+        # 添加新客户端IP
+        if [ip, port] not in self.ip_cache:
+            self.ip_cache.append([ip, port])
+            IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
+                                        Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
+            with open(IP_cache_file_path, 'w') as ip_cache_file:
+                ip_cache_file.write(str(self.ip_cache))
 
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_main):
@@ -164,27 +203,29 @@ class GPIO_CONT():
 
 if __name__ == '__main__':
     pipe_sensor = Pipe()
-    pipe_main = Pipe()
-    # mainapp = Process(target=MainAPP, args=(pipe_sensor[1], pipe_main[0]))
-    temp = Process(target=get_temp, args=(pipe_sensor[0],))
-    time = Process(target=get_time, args=(pipe_sensor[0],))
-    adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    # maingui = Process(target=GUI_by_tkinter.GUI, args=(pipe_sensor[0], pipe_main[1]))
-    # gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[1], pipe_main[0],))
-    
-    # mainapp.start()
-    temp.start()
-    time.start()
-    adc.start()
-    # maingui.start()
-    # gpio_cont.start()
+    pipe_GPIO = Pipe()
 
-    # mainapp.join()
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_GPIO[1]))
+    temp = Process(target=get_temp, args=(pipe_sensor[0],))
+    height = Process(target=get_height, args=(pipe_sensor[0],))
+    adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
+    udp_server = Process(target=UDP_server, args=(pipe_GPIO[0],))
+    gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
+
+    mainapp.start()
+    temp.start()
+    height.start()
+    adc.start()
+    udp_server.start()
+    gpio_cont.start()
+
+    mainapp.join()
     temp.join()
-    time.join()
+    height.join()
     adc.join()
-    # maingui.join()
-    # gpio_cont.join()
+    udp_server.join()
+    gpio_cont.join()
+
 
 
 
