@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-from time
+import time
 from multiprocessing import Process, Pipe
 
 import socket
@@ -84,7 +84,6 @@ def get_height(pipe_sensor):
                             'height':height})
         time.sleep(Wait_time)
 
-
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -98,26 +97,42 @@ class MainAPP(Config):
                 'lumen':'N/A',
                 'turbidity':'N/A',
                 'height':'N/A',
-                'light':0
-                'pump_air':0
-                'pump_1':0
-                'pump2':0
-                'magnetic_stitter':0
+                'light':0,
+                'pump_air':0,
+                'pump_1':0,
+                'pump2':0,
+                'magnetic_stitter':0,
                 }
 
         cache_file_path = os.path.join(str(Config().conf.get('DEFULT_CACHE_PATH')),
-                                        str(get_time())+'.txt'),
-        with open(cache_file_path, 'w') as cache_file
-        while True:
-            data = pipe_sensor.recv()
-            if isinstance(data,dict):
-                # 写入文件
-                cache_file.write(data)
-                cache_file.write('\n')
+                                        str(get_time())+'.txt')
+        with open(cache_file_path, 'a') as cache_file:
+            while True:
+                data = pipe_sensor.recv()
+                if isinstance(data,dict):
+                    # 写入文件
+                    cache_file.write(data)
+                    cache_file.write('\n')
+                    self.stauts = dict(self.stauts, **data)
+                    self.UDP_sender(data)
+                else:
+                    continue
 
-                self.stauts = dict(self.stauts, **data)
-            else:
+    def UDP_sender(self, data):
+        IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
+                                        Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
+        IP_cache = eval(open(IP_cache_file_path).read())
+        
+        for IP_PORT in IP_cache:
+            if IP_PORT[0] == None or IP_PORT[1] == None:
                 continue
+            udp_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+            local_addr = ("",7890)
+            udp_socket.bind(local_addr)
+            
+            send_data = str(self.stauts)
+            udp_socket.sendto(send_data.encode("utf-8"),(IP_PORT[0],IP_PORT[1]))
+            udp_socket.close()
 
 class UDP_server(Config):
     def __init__(self):
@@ -166,7 +181,6 @@ class GPIO_CONT():
             else:
                 continue
 
-            
         self.GPIO_PIN = {'light':21,'pump_1':20,'pump_2':16,'pump_air':None,'magnetic_stitter':None}
 
         self.devices = [['light','off','0','','',''],
@@ -175,8 +189,6 @@ class GPIO_CONT():
                         ['pump2','off','0','','',''],
                         ['magnetic_stitter','off','0','','',''],
         ]
-
-            
 
     def check_status(self):
         for i in range(len(self.devices)):
@@ -225,10 +237,6 @@ if __name__ == '__main__':
     adc.join()
     udp_server.join()
     gpio_cont.join()
-
-
-
-
 
 # 结束子进程？
     # p.process.signal(signal.SIGINT)

@@ -1,5 +1,7 @@
-import socket
+
+import time
 import os
+import socket
 import configparser
 class Config(object):
     def __init__(self):
@@ -23,65 +25,41 @@ class Config(object):
             self.conf.write(config_file)
             config_file.close()
 
-class UDP_sender():
+
+class MainAPP(Config):
     def __init__(self):
-        message = MainAPP.stauts
-        self.sender(message)
+        self.stauts = {'time':'N/A',
+                'temperature':'N/A', 
+                'humidity':'N/A',
+                'water_temperature':'N/A',
+                'PH':'N/A',
+                'lumen':'N/A',
+                'turbidity':'N/A',
+                'height':'N/A',
+                'light':0,
+                'pump_air':0,
+                'pump_1':0,
+                'pump2':0,
+                'magnetic_stitter':0,
+                }
+        while True:
+            self.UDP_sender(self.stauts)
+            time.sleep(2)
 
-    # UDP发送端
-    def sender(self, message):
-        buffersize=1024
-        Sender = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        for IP, port in UDP_server.send_to_IP:
-            Sender.sendto(message.encode(),(IP,port))
 
-class UDP_server(Config):
-    def __init__(self):
-        self.Get_local_IP()
-        print("Localhost_IP = ",self.Localhost)
-
-        
-        self.ip_cache = []
-        self.add_new_client(None,None)
-
-        self.port = int(Config().conf.get('UDP server','PORT'))
-        self.send_to_IP = [] #[[IP,port],...]
-
-    def Get_local_IP(self):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(('8.8.8.8', 80))
-            self.Localhost = s.getsockname()[0]
-            Config().write('UDP server','LOCALHOST',self.Localhost)
-            print('Localhost =', self.Localhost,":",Config().conf.get('UDP server','PORT'))
-
-        finally:
-            s.close()
-
-    def server(self):
-        server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
-        data=server.recv(1024) #一次接收1024字节
-        print(data.decode())# decode()解码收到的字节
-
-    def add_new_client(self, ip, port):
-        # 添加新客户端IP
-        if [ip, port] not in self.ip_cache:
-            self.ip_cache.append([ip, port])
-            IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
+    def UDP_sender(self, data):
+        IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
                                         Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
-            with open(IP_cache_file_path, 'w') as ip_cache_file:
-                ip_cache_file.write(str(self.ip_cache))
-
+        IP_cache = eval(open(IP_cache_file_path).read())
+        
+        for IP_PORT in IP_cache:
+            udp_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+            local_addr = ("",7890)
+            udp_socket.bind(local_addr)
+            
+            send_data = str(self.stauts)
+            udp_socket.sendto(send_data.encode("utf-8"),(IP_PORT[0],IP_PORT[1]))
+            udp_socket.close()
 
 if __name__ == '__main__':
-    UDP_server()
-    
-
-
-
-
-
-
-# 结束子进程？
-    # p.process.signal(signal.SIGINT)
+    MainAPP()
