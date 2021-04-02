@@ -223,7 +223,7 @@ if __name__ == '__main__':
     pipe_sensor = Pipe()
     pipe_GPIO = Pipe()
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1]))
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],))
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     height = Process(target=get_height, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
