@@ -215,6 +215,10 @@ class GPIO_CONT():
         GPIO.cleanup(pin)    
 
 if __name__ == '__main__':
+    cache_dir = os.path.join(str(Config().conf.get('DEFULT_CACHE_PATH')))
+    if not os.path.exists(cache_dir):
+        os.mkdir(cache_dir)
+
     pipe_sensor = Pipe()
     pipe_GPIO = Pipe()
 
