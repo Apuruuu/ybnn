@@ -25,7 +25,42 @@ class Config(object):
             self.conf.write(config_file)
             config_file.close()
 
+class UDP_server(Config):
+    def __init__(self):
+        self.Get_local_IP()
+        print("Localhost_IP = ",self.Localhost)
 
+        self.ip_cache = []
+        self.add_new_client(None,None)
+
+        self.port = int(Config().conf.get('UDP server','PORT'))
+        self.send_to_IP = [] #[[IP,port],...]
+
+    def Get_local_IP(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            self.Localhost = s.getsockname()[0]
+            Config().write('UDP server','LOCALHOST',self.Localhost)
+            print('Localhost =', self.Localhost,":",Config().conf.get('UDP server','PORT'))
+
+        finally:
+            s.close()
+
+    def server(self):
+        server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
+        data=server.recv(1024) #一次接收1024字节
+        print(data.decode())# decode()解码收到的字节
+
+    def add_new_client(self, ip, port):
+        # 添加新客户端IP
+        if [ip, port] not in self.ip_cache:
+            self.ip_cache.append([ip, port])
+            IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
+                                        Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
+            with open(IP_cache_file_path, 'w') as ip_cache_file:
+                ip_cache_file.write(str(self.ip_cache))
 class MainAPP(Config):
     def __init__(self):
         self.stauts = {'time':'N/A',
@@ -62,4 +97,4 @@ class MainAPP(Config):
             udp_socket.close()
 
 if __name__ == '__main__':
-    MainAPP()
+    UDP_server()
