@@ -110,6 +110,7 @@ class MainAPP(Config):
         with open(cache_file_path, 'a') as cache_file:
             while True:
                 data = pipe_sensor.recv()
+                print(data)
                 if isinstance(data,dict):
                     # 写入文件
                     cache_file.write(data)
@@ -222,7 +223,7 @@ if __name__ == '__main__':
     pipe_sensor = Pipe()
     pipe_GPIO = Pipe()
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_GPIO[1]))
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1]))
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     height = Process(target=get_height, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
