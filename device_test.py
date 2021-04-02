@@ -58,7 +58,7 @@ class MainAPP(Config):
                 print(data)
                 if isinstance(data,dict):
                     # 写入文件
-                    cache_file.write(data)
+                    cache_file.write(str(data))
                     cache_file.write('\n')
                     self.stauts = dict(self.stauts, **data)
                     self.UDP_sender(data)
