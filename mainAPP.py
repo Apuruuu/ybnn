@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # temp = Process(target=get_temp, args=(pipe_sensor[0],))
     # height = Process(target=get_height, args=(pipe_sensor[0],))
     # adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    udp_server = Process(target=UDP_server, args=(pipe_GPIO[0],))
+    udp_server = Process(target=UDP_server)
     # gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
 
     # mainapp.start()
