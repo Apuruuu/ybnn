@@ -47,10 +47,7 @@ def get_temp(pipe_sensor):
                                 'humidity':result.humidity})
             print(result.temperature,result.humidity)
         else:
-            pipe_sensor.send({'time':get_time(),
-                                'temperature':"N/A",
-                                'humidity':"N/A"})
-            print('nodata')
+            continue
         time.sleep(Wait_time)
 
 def get_ADC_value(pipe_sensor):
@@ -90,7 +87,7 @@ def get_time():
 
 def send_time(pipe_sensor):
     pipe_sensor.send({'time':get_time()})
-    
+
 class MainAPP(Config):
     def __init__(self, pipe_sensor):
         self.stauts = {'time':'N/A',
