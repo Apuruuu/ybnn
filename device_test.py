@@ -1,14 +1,10 @@
-import RPi.GPIO as GPIO
+
 import time
 from multiprocessing import Process, Pipe
 
 import os
 import socket
 import configparser
-
-# 初始化GPIO
-GPIO.setwarnings(True)
-GPIO.setmode(GPIO.BCM)
 
 class Config(object):
     def __init__(self):
@@ -32,62 +28,11 @@ class Config(object):
             self.conf.write(config_file)
             config_file.close()
 
-def get_temp(pipe_sensor):
-    import units.dht11
-
-    pin=int(Config().conf.get('GPIO_PIN','DHT11'))
-    instance = units.dht11.DHT11(pin)
-    Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
-
-    while True:
-        result = instance.read()
-        if result.is_valid():
-            pipe_sensor.send({'time':get_time(),
-                                'temperature':result.temperature,
-                                'humidity':result.humidity})
-            print(result.temperature,result.humidity)
-        else:
-            continue
-        time.sleep(Wait_time)
-
-def get_ADC_value(pipe_sensor):
-    import units.ADS1x15
-
-    adc = units.ADS1x15.ADS1115()
-    GAIN = Config().conf.getint('ADC','GAIN')
-    Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
-
-    while True:
-        # 读取ADC所有信道的值
-        values = [0]*4
-        for i in range(4):
-            values[i] = adc.read_adc(i, gain=GAIN)
-        print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
-        pipe_sensor.send({'time':get_time(),
-                        'PH':values[0],
-                        'turbidity':values[1],
-                        'ADC3_A2':values[2],
-                        'ADC4_A3':values[3]})
-        time.sleep(Wait_time)
-
-def get_height(pipe_sensor):
-    import units.Ultrasonic_ranger
-
-    pin = int(Config().conf.get('GPIO_PIN','UR'))
-    Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
-
-    while True:
-        height = units.Ultrasonic_ranger.Get_depth(pin)
-        pipe_sensor.send({'time':get_time(),
-                            'height':height})
-        time.sleep(Wait_time)
-
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 def send_time(pipe_sensor):
     pipe_sensor.send({'time':get_time()})
-
 class MainAPP(Config):
     def __init__(self, pipe_sensor):
         self.stauts = {'time':'N/A',
@@ -224,25 +169,16 @@ if __name__ == '__main__':
     pipe_GPIO = Pipe()
 
     mainapp = Process(target=MainAPP, args=(pipe_sensor[1],))
-    temp = Process(target=get_temp, args=(pipe_sensor[0],))
-    height = Process(target=get_height, args=(pipe_sensor[0],))
-    adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    udp_server = Process(target=UDP_server)
-    gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
+    temp = Process(target=send_time, args=(pipe_sensor[0],))
+
 
     mainapp.start()
     temp.start()
-    height.start()
-    adc.start()
-    udp_server.start()
-    gpio_cont.start()
+
 
     mainapp.join()
     temp.join()
-    height.join()
-    adc.join()
-    udp_server.join()
-    gpio_cont.join()
+
 
 # 结束子进程？
     # p.process.signal(signal.SIGINT)
