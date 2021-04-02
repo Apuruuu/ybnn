@@ -141,7 +141,7 @@ class UDP_server(Config):
         print("Localhost_IP = ",self.Localhost)
 
         self.ip_cache = []
-        self.add_new_client(None,None)
+        self.add_new_client('10.0.10.10',9998)
 
         self.port = int(Config().conf.get('UDP server','PORT'))
         self.send_to_IP = [] #[[IP,port],...]
@@ -222,12 +222,12 @@ if __name__ == '__main__':
     pipe_sensor = Pipe()
     pipe_GPIO = Pipe()
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_GPIO[1]))
-    temp = Process(target=get_temp, args=(pipe_sensor[0],))
-    height = Process(target=get_height, args=(pipe_sensor[0],))
-    adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
+    # mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_GPIO[1]))
+    # temp = Process(target=get_temp, args=(pipe_sensor[0],))
+    # height = Process(target=get_height, args=(pipe_sensor[0],))
+    # adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
     udp_server = Process(target=UDP_server, args=(pipe_GPIO[0],))
-    gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
+    # gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
 
     mainapp.start()
     temp.start()
