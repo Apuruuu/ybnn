@@ -57,7 +57,7 @@ def get_ADC_value(pipe_sensor):
     import units.ADS1x15
 
     adc = units.ADS1x15.ADS1115()
-    GAIN = Config().conf.get('ADC','GAIN')
+    GAIN = Config().conf.getint('ADC','GAIN')
     Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
 
     while True:
