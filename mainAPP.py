@@ -105,7 +105,7 @@ class MainAPP(Config):
                 'magnetic_stitter':0,
                 }
 
-        cache_file_path = os.path.join(str(Config().conf.get('DEFULT_CACHE_PATH')),
+        cache_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_CACHE_PATH')),
                                         str(get_time())+'.txt')
         with open(cache_file_path, 'a') as cache_file:
             while True:
@@ -215,7 +215,7 @@ class GPIO_CONT():
         GPIO.cleanup(pin)    
 
 if __name__ == '__main__':
-    cache_dir = os.path.join(str(Config().conf.get('DEFULT_CACHE_PATH')))
+    cache_dir = os.path.join(str(Config().conf.get('Defult setting','DEFULT_CACHE_PATH')))
     if not os.path.exists(cache_dir):
         os.mkdir(cache_dir)
 
