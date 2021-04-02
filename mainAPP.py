@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 from multiprocessing import Process, Pipe
 
+import os
 import socket
 import configparser
 
