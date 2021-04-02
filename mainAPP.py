@@ -88,6 +88,9 @@ def get_height(pipe_sensor):
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
+def send_time(pipe_sensor):
+    pipe_sensor.send({'time':get_time()})
+    
 class MainAPP(Config):
     def __init__(self, pipe_sensor):
         self.stauts = {'time':'N/A',
@@ -113,7 +116,7 @@ class MainAPP(Config):
                 print(data)
                 if isinstance(data,dict):
                     # 写入文件
-                    cache_file.write(data)
+                    cache_file.write(str(data))
                     cache_file.write('\n')
                     self.stauts = dict(self.stauts, **data)
                     self.UDP_sender(data)
