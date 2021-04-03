@@ -103,7 +103,7 @@ class UDP_server(Config):
     def __init__(self, pipe_sensor, pipe_UDP, pipe_GPIO):
         self.Get_local_IP()
         print("Localhost_IP = ",self.Localhost)
-        self.port = int(Config().conf.get('UDP server','PORT'))
+        self.port = int(Config().conf.get('UDP SERVER','PORT'))
         self.server(pipe_sensor, pipe_UDP)
         self.UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')),
                                             str(Config().conf.get('Defult setting','UDP_log_file_path')),
@@ -115,7 +115,7 @@ class UDP_server(Config):
             s.connect(('8.8.8.8', 80))
             self.Localhost = s.getsockname()[0]
             Config().write('UDP SERVER','LOCALHOST',self.Localhost)
-            print('Localhost =', self.Localhost,":",Config().conf.get('UDP server','PORT'))
+            print('Localhost =', self.Localhost,":",Config().conf.get('UDP SERVER','PORT'))
         finally:
             s.close()
 
