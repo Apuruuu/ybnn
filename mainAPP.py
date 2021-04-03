@@ -151,37 +151,6 @@ class GPIO_CONT():
     def __init__(self,GPIO_PIN,STATUS):
         pass
 
-        self.pipe_main = pipe_main
-        while True:
-            data = pipe_sensor.recv()
-            if isinstance(data,tuple):
-                _command = {'device':data[0], 'turn_to':data[1], 'timer':data[2], 'keep1':'', 'keep2':'', 'keep3':''}
-            else:
-                continue
-
-        self.GPIO_PIN = {'light':21,'pump_1':20,'pump_2':16,'pump_air':None,'magnetic_stitter':None}
-
-        self.devices = [['light','off','0','','',''],
-                        ['pump_air','off','0','','',''],
-                        ['pump_1','off','0','','',''],
-                        ['pump2','off','0','','',''],
-                        ['magnetic_stitter','off','0','','',''],
-        ]
-
-    def check_status(self):
-        for i in range(len(self.devices)):
-            if int(self.devices[i,2]) == 0 and self.devices[i,1] == 'off':
-                continue
-
-            if int(self.devices[i,2]) > 0 and self.devices[i,1] == 'off':
-                self.devices[i,2] = int(self.devices[i,2]) - 1
-                self.Turn_ON(self.GPIO_PIN[self.devices[i,0]])
-
-            if int(self.devices[i,2]) == 0 and self.devices[i,1] == 'on':
-                self.Turn_OFF(self.GPIO_PIN[self.devices[i,0]])
-
-        self.pipe_main.send(self.devices)
-
     def Turn_ON(self,pin):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
