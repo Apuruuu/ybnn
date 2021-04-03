@@ -1,4 +1,4 @@
-device_test.py
+*.cfg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
