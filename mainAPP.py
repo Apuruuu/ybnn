@@ -149,7 +149,7 @@ class UDP_server(Config):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
         while True:
-            data, client_addr=server.recv(1024) #一次接收1024字节
+            data, client_addr=server.recvfrom(1024) #一次接收1024字节
             data = data.decode(encoding='utf-8').upper()
             print(data.decode(),'from',aclient_addr)# decode()解码收到的字节
             # # log
