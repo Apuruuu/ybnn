@@ -170,10 +170,10 @@ class GPIO_CONT():
         GPIO.output(PIN, GPIO.LOW)
         GPIO.cleanup(PIN)
         
-def Data_LED_Flash(time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
+def Data_LED_Flash(on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
     GPIO.setup(PIN, GPIO.OUT)
     GPIO.output(PIN, GPIO.HIGH)
-    time.sleep(time)
+    time.sleep(on_time)
     GPIO.output(PIN, GPIO.LOW)
     GPIO.cleanup(PIN)
 
