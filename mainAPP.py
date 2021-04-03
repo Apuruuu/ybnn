@@ -96,7 +96,7 @@ class MainAPP(Config):
                     cache_file.write('\n')
                     self.status = dict(self.status, **data)
                     self.UDP_sender(data)
-                elif data = "send_to_UDP_server":
+                elif data == "send_to_UDP_server":
                     pipe_UDP.send(self.status)
                 else:
                     continue
