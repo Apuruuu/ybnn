@@ -88,6 +88,7 @@ class MainAPP(Config):
                 data = pipe_sensor.recv()
                 if isinstance(data,dict):
                     print(data)
+                    Data_LED_Flash()
                     # 写入文件
                     log_file.write(str(data))
                     log_file.write('\n')
@@ -133,6 +134,7 @@ class UDP_server(Config):
             data, client_addr=server.recvfrom(1024) #一次接收1024字节
             data = data.decode(encoding='utf-8').upper()
             print(data,'from',client_addr)# decode()解码收到的字节
+            Data_LED_Flash()
             data = eval(data)
             # # log
             if data['COMMAND'] == 'GET_DATA': # 获取数据
@@ -148,8 +150,16 @@ class UDP_server(Config):
                 continue
 
 class GPIO_CONT():
-    def __init__(self,GPIO_PIN,STATUS):
-        pass
+    def __init__(self,GPIO_PIN_list,STATUS_list):
+        for i in range(len(GPIO_PIN_list)-1):
+            if STATUS_list[i] == -1:
+                Turn_ON(GPIO_PIN_list[i])
+            if STATUS_list[i] > 0:
+                Turn_ON(GPIO_PIN_list[i])
+            if STATUS_list[i] == 0:
+                Turn_OFF(GPIO_PIN_list[i])
+            else:
+                continue
 
     def Turn_ON(self,pin):
         GPIO.setup(PIN, GPIO.OUT)
@@ -158,7 +168,14 @@ class GPIO_CONT():
     def Turn_OFF(self,pin):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(pin)    
+        GPIO.cleanup(pin)
+        
+def Data_LED_Flash(time=0.2, pin=Config().conf.getint('GPIO PIN', 'data_led')):
+    GPIO.setup(PIN, GPIO.OUT)
+    GPIO.output(PIN, GPIO.HIGH)
+    time.sleep(time)
+    GPIO.output(PIN, GPIO.LOW)
+    GPIO.cleanup(pin)
 
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO):
