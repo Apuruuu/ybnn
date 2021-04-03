@@ -203,7 +203,7 @@ class sys_timer(Config):
 
         return_status = {'server_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
         for device in self.device_list:
-            if devece in status:
+            if device in status:
                 if status[device] >0:
                     return_status[device] = status[device] - 1
             else:
