@@ -161,8 +161,8 @@ class UDP_server(Config):
     def server(self):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
-        data=server.recv(1024) #一次接收1024字节
-        print(data.decode())# decode()解码收到的字节
+        data, addr=server.recv(1024) #一次接收1024字节
+        print(data.decode(),'from',addr)# decode()解码收到的字节
 
     def add_new_client(self, ip, port):
         # 添加新客户端IP
