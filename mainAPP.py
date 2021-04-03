@@ -65,7 +65,7 @@ def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 class MainAPP(Config):
-    def __init__(self, pipe_sensor, pipe_UDP):
+    def __init__(self, pipe_sensor, pipe_UDP, pipe_GPIO):
         self.status = {'server_time':'N/A',
                 'temperature':'N/A', 
                 'humidity':'N/A',
@@ -100,7 +100,7 @@ class MainAPP(Config):
                     continue
 
 class UDP_server(Config):
-    def __init__(self, pipe_sensor, pipe_UDP, pipe_GPIO):
+    def __init__(self, pipe_sensor, pipe_UDP):
         self.Get_local_IP()
         print("Localhost_IP = ",self.Localhost)
         self.port = int(Config().conf.get('UDP SERVER','PORT'))
@@ -125,7 +125,7 @@ class UDP_server(Config):
             udp_log.write(str(log))
             udp_log.write("\n")
 
-    def server(self, pipe_sensor, pipe_UDP, pipe_GPIO):
+    def server(self, pipe_sensor, pipe_UDP):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
         print("UDP server",self.Localhost,"liscening",self.port)
@@ -254,11 +254,11 @@ if __name__ == '__main__':
     pipe_GPIO = Pipe()
     pipe_UDP = Pipe()
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_UDP[0]))
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_UDP[0],pipe_GPIO[0]))
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     height = Process(target=get_height, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1],pipe_GPIO[0]))
+    udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1]))
     sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1]))
 
     mainapp.start()
