@@ -14,11 +14,11 @@ GPIO.setmode(GPIO.BCM)
 def get_temp(pipe_sensor):
     import units.dht11
 
-    pin=int(Config().conf.get('SENSOR PIN','DHT11'))
-    instance = units.dht11.DHT11(pin)
-    Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
-
     while True:
+        GPIO.setmode(GPIO.BCM)
+        pin=int(Config().conf.get('SENSOR PIN','DHT11'))
+        instance = units.dht11.DHT11(pin)
+        Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
         result = instance.read()
         if result.is_valid():
             pipe_sensor.send({'server_time':get_time(),
@@ -151,6 +151,7 @@ class UDP_server(Config):
 
 class GPIO_CONT():
     def __init__(self,GPIO_PIN_list,STATUS_list):
+        GPIO.setmode(GPIO.BCM)
         for i in range(len(GPIO_PIN_list)-1):
             if STATUS_list[i] == -1:
                 self.Turn_ON(GPIO_PIN_list[i])
@@ -160,23 +161,25 @@ class GPIO_CONT():
                 self.Turn_OFF(GPIO_PIN_list[i])
             else:
                 continue
+        GPIO.cleanup()
 
     def Turn_ON(self,PIN):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
 
     def Turn_OFF(self,PIN):
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(PIN)
         
 def Data_LED_Flash(on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(PIN, GPIO.OUT)
     GPIO.output(PIN, GPIO.HIGH)
     time.sleep(on_time)
     GPIO.output(PIN, GPIO.LOW)
-    GPIO.cleanup(PIN)
-
+    GPIO.cleanup()
+    
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO):
         pipe_sensor.send(str("GPIO"))
