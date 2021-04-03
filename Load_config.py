@@ -5,7 +5,7 @@ class Config(object):
     def __init__(self):
         self.config_file_path = 'config.cfg'
         if not os.walk(self.config_file_path):
-            
+            self.create_default_config_file()
         self.read()
 
     # 读取config文件
