@@ -163,10 +163,12 @@ class GPIO_CONT():
         GPIO.cleanup()
 
     def Turn_ON(self,PIN):
+        print('OPEN')
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
 
     def Turn_OFF(self,PIN):
+        print('OFF')
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
