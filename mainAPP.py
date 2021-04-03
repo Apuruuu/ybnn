@@ -156,7 +156,7 @@ class UDP_server(Config):
             if data == "DATA":
                 pipe_sensor.send("send_to_UDP_server")
                 return_data = pipe_UDP.recv()
-                server.sendto(return_data.encode(encoding='utf-8'),client_addr)
+                server.sendto(str(return_data).encode(encoding='utf-8'),client_addr)
             else:
                 continue
 
