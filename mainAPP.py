@@ -57,7 +57,6 @@ class MainAPP(Config):
                 data = pipe_sensor.recv()
                 if isinstance(data,dict):
                     print(data)
-                    Data_LED_Flash()
                     # 写入文件
                     log_file.write(str(data))
                     log_file.write('\n')
@@ -101,7 +100,6 @@ class UDP_server(Config):
             data, client_addr=server.recvfrom(1024) #一次接收1024字节
             data = data.decode(encoding='utf-8').upper()
             print(data,'from',client_addr)# decode()解码收到的字节
-            Data_LED_Flash()
             data = eval(data)
             # # log
             if data['COMMAND'] == 'GET_DATA': # 获取数据
@@ -192,16 +190,16 @@ class sys_timer(Config):
         self.GPIO_PIN = []
         self.status = []
         self.get_GPIO_PIN(status)
-        pipe_timer.send(self.GPIO_PIN, self.status)
+        pipe_timer.send([self.GPIO_PIN, self.status])
         self.timer()
         self.status[7] = 0
         print("设定dataled关")
-        pipe_timer.send(self.GPIO_PIN, self.status)
+        pipe_timer.send([self.GPIO_PIN, self.status])
 
         while True:
             self.timer()
             pipe_sensor.send(self.update_status(status))
-            pipe_timer.send(self.GPIO_PIN, self.status)
+            pipe_timer.send([self.GPIO_PIN, self.status])
             pipe_sensor.send(str("GPIO"))
             status = pipe_GPIO.recv()
 
