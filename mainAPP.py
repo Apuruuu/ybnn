@@ -153,29 +153,29 @@ class GPIO_CONT():
     def __init__(self,GPIO_PIN_list,STATUS_list):
         for i in range(len(GPIO_PIN_list)-1):
             if STATUS_list[i] == -1:
-                Turn_ON(GPIO_PIN_list[i])
+                self.Turn_ON(GPIO_PIN_list[i])
             if STATUS_list[i] > 0:
-                Turn_ON(GPIO_PIN_list[i])
+                self.Turn_ON(GPIO_PIN_list[i])
             if STATUS_list[i] == 0:
-                Turn_OFF(GPIO_PIN_list[i])
+                self.Turn_OFF(GPIO_PIN_list[i])
             else:
                 continue
 
-    def Turn_ON(self,pin):
+    def Turn_ON(self,PIN):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
 
-    def Turn_OFF(self,pin):
+    def Turn_OFF(self,PIN):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(pin)
+        GPIO.cleanup(PIN)
         
-def Data_LED_Flash(time=0.2, pin=Config().conf.getint('GPIO PIN', 'data_led')):
+def Data_LED_Flash(time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
     GPIO.setup(PIN, GPIO.OUT)
     GPIO.output(PIN, GPIO.HIGH)
     time.sleep(time)
     GPIO.output(PIN, GPIO.LOW)
-    GPIO.cleanup(pin)
+    GPIO.cleanup(PIN)
 
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO):
