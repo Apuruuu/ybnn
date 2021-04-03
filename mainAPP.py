@@ -126,7 +126,7 @@ class UDP_server(Config):
 
         self.port = int(Config().conf.get('UDP server','PORT'))
         self.send_to_IP = [] #[[IP,port],...]
-        self.server()
+        self.server(pipe_sensor, pipe_UDP)
 
     def Get_local_IP(self):
         try:
@@ -145,7 +145,7 @@ class UDP_server(Config):
         with open(IP_cache_file_path, 'w') as ip_cache_file:
             ip_cache_file.write(str(self.ip_cache))
 
-    def server(self):
+    def server(self, pipe_sensor, pipe_UDP):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
         while True:
