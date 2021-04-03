@@ -46,6 +46,7 @@ def get_ADC_value(pipe_sensor):
         time.sleep(Wait_time)
 
 def get_height(pipe_sensor):
+    GPIO.setmode(GPIO.BCM)
     import units.Ultrasonic_ranger
 
     pin = int(Config().conf.get('SENSOR PIN','UR'))
