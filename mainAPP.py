@@ -118,10 +118,13 @@ class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_timer):
         GPIO.setmode(GPIO.BCM)
 
+        self.pipe_sensor = pipe_sensor
+
         DHT11_waittime = Config().conf.getint('DHT11','wait_time')
         UR_waittime = Config().conf.getint('UR','wait_time')
 
         GPIO_PIN_list,_ = pipe_timer.recv()
+        print()
         #set pin out
         for PIN in GPIO_PIN_list:
             GPIO.setup(PIN, GPIO.OUT)
@@ -140,9 +143,9 @@ class GPIO_CONT():
                         continue
 
                 if t % DHT11_waittime == 0 :
-                    self.get_temp(pipe_sensor)
+                    self.get_temp()
                 if t % UR_waittime == 0 :
-                    # self.get_height(pipe_sensor)
+                    # self.get_height()
                     pass
 
     def Turn_ON(self,PIN):
@@ -158,7 +161,7 @@ class GPIO_CONT():
         time.sleep(on_time)
         GPIO.output(PIN, GPIO.LOW)
 
-    def get_temp(pipe_sensor):
+    def get_temp(self):
         import units.dht11
 
         pin=int(Config().conf.get('SENSOR PIN','DHT11'))
@@ -166,19 +169,19 @@ class GPIO_CONT():
         while True:
             result = instance.read()
             if result.is_valid():
-                pipe_sensor.send({'server_time':get_time(),'temperature':result.temperature,'humidity':result.humidity})
+                self.pipe_sensor.send({'server_time':get_time(),'temperature':result.temperature,'humidity':result.humidity})
                 print(result.temperature,result.humidity)
                 break
             else:
                 continue
 
-    def get_height(pipe_sensor):
+    def get_height(self):
         import units.Ultrasonic_ranger
 
         pin = int(Config().conf.get('SENSOR PIN','UR'))
         Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
         height = units.Ultrasonic_ranger.Get_depth(pin)
-        pipe_sensor.send({'server_time':get_time(),'height':height})
+        self.pipe_sensor.send({'server_time':get_time(),'height':height})
     
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
