@@ -7,10 +7,6 @@ import socket
 import configparser
 from Load_config import Config
 
-# 初始化GPIO
-GPIO.setwarnings(True)
-GPIO.setmode(GPIO.BCM)
-
 def get_temp(pipe_sensor):
     import units.dht11
 
@@ -103,7 +99,6 @@ class MainAPP(Config):
 class UDP_server(Config):
     def __init__(self, pipe_sensor, pipe_UDP):
         self.Get_local_IP()
-        print("Localhost_IP = ",self.Localhost)
         self.port = int(Config().conf.get('UDP SERVER','PORT'))
         self.server(pipe_sensor, pipe_UDP)
         self.UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')),
@@ -116,7 +111,6 @@ class UDP_server(Config):
             s.connect(('8.8.8.8', 80))
             self.Localhost = s.getsockname()[0]
             Config().write('UDP SERVER','LOCALHOST',self.Localhost)
-            print('Localhost =', self.Localhost,":",Config().conf.get('UDP SERVER','PORT'))
         finally:
             s.close()
 
