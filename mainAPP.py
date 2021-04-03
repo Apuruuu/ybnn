@@ -117,6 +117,7 @@ class UDP_server(Config):
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_timer):
         GPIO.setmode(GPIO.BCM)
+
         DHT11_waittime = Config().conf.getint('DHT11','wait_time')
         UR_waittime = Config().conf.getint('UR','wait_time')
 
@@ -145,17 +146,16 @@ class GPIO_CONT():
 
     def Turn_OFF(self,PIN):
         print('OFF')
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(PIN)
+        # GPIO.cleanup(PIN)
 
     def Data_LED_Flash(self, on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
         time.sleep(on_time)
         GPIO.output(PIN, GPIO.LOW)
-        GPIO.cleanup(PIN)
+        # GPIO.cleanup(PIN)
 
     def get_temp(pipe_sensor):
         import units.dht11
