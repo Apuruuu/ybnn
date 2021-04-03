@@ -153,8 +153,9 @@ class UDP_server(Config):
             data = data.decode(encoding='utf-8').upper()
             print(data,'from',client_addr)# decode()解码收到的字节
             print(type(data))
+            data = eval(data)
             # # log
-            if data == "DATA":
+            if data['command'] == 0:
                 pipe_sensor.send("send_to_UDP_server")
                 return_data = pipe_UDP.recv()
                 server.sendto(str(return_data).encode(encoding='utf-8'),client_addr)
