@@ -121,6 +121,7 @@ class GPIO_CONT():
         DHT11_waittime = Config().conf.getint('DHT11','wait_time')
         UR_waittime = Config().conf.getint('UR','wait_time')
 
+        GPIO_PIN_list,_ = pipe_timer.recv()
         #set pin out
         for PIN in GPIO_PIN_list:
             GPIO.setup(PIN, GPIO.OUT)
