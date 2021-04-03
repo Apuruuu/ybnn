@@ -89,7 +89,7 @@ class MainAPP(Config):
                 print(data)
                 if isinstance(data,dict):
                     # 写入文件
-                    log_filee.write(str(data))
+                    log_file.write(str(data))
                     log_file.write('\n')
                     self.status = dict(self.status, **data)
                 elif data == "send_to_UDP_server":
@@ -148,8 +148,8 @@ class UDP_server(Config):
                 continue
 
 class GPIO_CONT():
-    def __init__(self,pipe_sensor,pipe_GPIO):
-        
+    def __init__(self,GPIO_PIN,STATUS):
+        pass
 
         self.pipe_main = pipe_main
         while True:
@@ -199,7 +199,7 @@ class sys_timer(Config):
         self.t = 0
         self.GPIO_PIN = []
         self.status = []
-        self.get_GPIO_PIN()
+        self.get_GPIO_PIN(status)
         GPIO_CONT(self.GPIO_PIN,self.status)
         self.timer()
         self.status[7] = 0
