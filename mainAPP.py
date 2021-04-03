@@ -8,10 +8,10 @@ import configparser
 from Load_config import Config
 
 def get_temp(pipe_sensor):
+    GPIO.setmode(GPIO.BCM)
     import units.dht11
 
     while True:
-        GPIO.setmode(GPIO.BCM)
         pin=int(Config().conf.get('SENSOR PIN','DHT11'))
         instance = units.dht11.DHT11(pin)
         Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
