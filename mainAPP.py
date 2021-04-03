@@ -255,7 +255,7 @@ if __name__ == '__main__':
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
     udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1]))
     gpio = Process(target=get_ADC_value, args=(pipe_sensor[0],pipe_timer[1]))
-    sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1]),pipe_timer[0])
+    sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1],pipe_timer[0]))
 
     mainapp.start()
     temp.start()
