@@ -121,41 +121,41 @@ class GPIO_CONT():
         DHT11_waittime = Config().conf.getint('DHT11','wait_time')
         UR_waittime = Config().conf.getint('UR','wait_time')
 
-        for t in range(DHT11_waittime*UR_waittime):
-            GPIO_PIN_list, STATUS_list = pipe_timer.recv()
-            for i in range(len(GPIO_PIN_list)-1):
-                if STATUS_list[i] == -1:
-                    self.Turn_ON(GPIO_PIN_list[i])
-                if STATUS_list[i] > 0:
-                    self.Turn_ON(GPIO_PIN_list[i])
-                if STATUS_list[i] == 0:
-                    self.Turn_OFF(GPIO_PIN_list[i])
-                else:
-                    continue
+        #set pin out
+        for PIN in GPIO_PIN_list:
+            GPIO.setup(PIN, GPIO.OUT)
 
-            if t % DHT11_waittime == 0 :
-                self.get_temp(pipe_sensor)
-            if t % UR_waittime == 0 :
-                # self.get_height(pipe_sensor)
-                pass
+        while True:
+            for t in range(DHT11_waittime*UR_waittime):
+                GPIO_PIN_list, STATUS_list = pipe_timer.recv()
+                for i in range(len(GPIO_PIN_list)-1):
+                    if STATUS_list[i] == -1:
+                        self.Turn_ON(GPIO_PIN_list[i])
+                    if STATUS_list[i] > 0:
+                        self.Turn_ON(GPIO_PIN_list[i])
+                    if STATUS_list[i] == 0:
+                        self.Turn_OFF(GPIO_PIN_list[i])
+                    else:
+                        continue
+
+                if t % DHT11_waittime == 0 :
+                    self.get_temp(pipe_sensor)
+                if t % UR_waittime == 0 :
+                    # self.get_height(pipe_sensor)
+                    pass
 
     def Turn_ON(self,PIN):
         print('OPEN')
-        GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
 
     def Turn_OFF(self,PIN):
         print('OFF')
-        GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        # GPIO.cleanup(PIN)
 
     def Data_LED_Flash(self, on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
-        GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.HIGH)
         time.sleep(on_time)
         GPIO.output(PIN, GPIO.LOW)
-        # GPIO.cleanup(PIN)
 
     def get_temp(pipe_sensor):
         import units.dht11
