@@ -114,7 +114,7 @@ class UDP_server(Config):
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(('8.8.8.8', 80))
             self.Localhost = s.getsockname()[0]
-            Config().write('UDP server','LOCALHOST',self.Localhost)
+            Config().write('UDP SERVER','LOCALHOST',self.Localhost)
             print('Localhost =', self.Localhost,":",Config().conf.get('UDP server','PORT'))
         finally:
             s.close()
