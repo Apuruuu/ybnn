@@ -86,8 +86,8 @@ class MainAPP(Config):
         with open(log_file_path, 'a') as log_file:
             while True:
                 data = pipe_sensor.recv()
-                print(data)
                 if isinstance(data,dict):
+                    print(data)
                     # 写入文件
                     log_file.write(str(data))
                     log_file.write('\n')
