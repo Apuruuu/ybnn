@@ -244,7 +244,7 @@ class sys_timer(Config):
 if __name__ == '__main__':
     log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')))
     UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_log_PATH')),
-                                    str(Config().conf.get('UDP CLIENT','UDP_log_file_path')))
+                                    str(Config().conf.get('UDP SERVER','UDP_log_file_path')))
     if not os.path.exists(log_file_path):
         os.mkdir(log_file_path)
     if not os.path.exists(UDP_log_file_path):
