@@ -25,8 +25,6 @@ def Get_depth(pin):
     time_difference = end-start
     depth = (time_difference * 340000) / 2
 
-    GPIO.cleanup()
-
     return depth
 
 if __name__ == '__main__':

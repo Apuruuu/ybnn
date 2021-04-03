@@ -73,7 +73,6 @@ class DHT11:
 
         temperature = the_bytes[2] + float(the_bytes[3]) / 10
         humidity = the_bytes[0] + float(the_bytes[1]) / 10
-        RPi.GPIO.cleanup()
 
         return DHT11Result(DHT11Result.ERR_NO_ERROR, temperature, humidity)
 
