@@ -15,7 +15,7 @@ class Config(object):
 
     def write(self,name1,name2,value):
         self.conf.set(name1, name2, value)
-        print(self.conf.get('UDP server','LOCALHOST'))
+        print(self.conf.get('UDP SERVER','LOCALHOST'))
         with open(self.config_file_path,'w') as config_file:
             self.conf.write(config_file)
             config_file.close()
