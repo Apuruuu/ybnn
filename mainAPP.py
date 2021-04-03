@@ -42,7 +42,7 @@ def get_temp(pipe_sensor):
     while True:
         result = instance.read()
         if result.is_valid():
-            pipe_sensor.send({'time':get_time(),
+            pipe_sensor.send({'server_time':get_time(),
                                 'temperature':result.temperature,
                                 'humidity':result.humidity})
             print(result.temperature,result.humidity)
@@ -63,7 +63,7 @@ def get_ADC_value(pipe_sensor):
         for i in range(4):
             values[i] = adc.read_adc(i, gain=GAIN)
         print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
-        pipe_sensor.send({'time':get_time(),
+        pipe_sensor.send({'server_time':get_time(),
                         'PH':values[0],
                         'turbidity':values[1],
                         'ADC3_A2':values[2],
@@ -78,7 +78,7 @@ def get_height(pipe_sensor):
 
     while True:
         height = units.Ultrasonic_ranger.Get_depth(pin)
-        pipe_sensor.send({'time':get_time(),
+        pipe_sensor.send({'server_time':get_time(),
                             'height':height})
         time.sleep(Wait_time)
 
@@ -86,11 +86,11 @@ def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 def send_time(pipe_sensor):
-    pipe_sensor.send({'time':get_time()})
+    pipe_sensor.send({'server_time':get_time()})
 
 class MainAPP(Config):
     def __init__(self, pipe_sensor):
-        self.stauts = {'time':'N/A',
+        self.status = {'server_time':'N/A',
                 'temperature':'N/A', 
                 'humidity':'N/A',
                 'water_temperature':'N/A',
@@ -106,7 +106,7 @@ class MainAPP(Config):
                 }
 
         cache_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_CACHE_PATH')),
-                                        str(get_time())+'.txt')
+                                        str(time.strftime("%Y_%m_%d_%H_%M_%S.txt", time.localtime())))
         with open(cache_file_path, 'a') as cache_file:
             while True:
                 data = pipe_sensor.recv()
@@ -115,7 +115,7 @@ class MainAPP(Config):
                     # 写入文件
                     cache_file.write(str(data))
                     cache_file.write('\n')
-                    self.stauts = dict(self.stauts, **data)
+                    self.status = dict(self.status, **data)
                     self.UDP_sender(data)
                 else:
                     continue
@@ -132,7 +132,7 @@ class MainAPP(Config):
             local_addr = ("",7890)
             udp_socket.bind(local_addr)
             
-            send_data = str(self.stauts)
+            send_data = str(self.status)
             udp_socket.sendto(send_data.encode("utf-8"),(IP_PORT[0],IP_PORT[1]))
             udp_socket.close()
 

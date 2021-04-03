@@ -1,0 +1,45 @@
+配置pi
+sudo raspi-config
+	interface options
+		SSH
+		I2C
+		Remote GPIO
+	advanced options
+		expand filesystem
+
+配置网络
+ifconfig
+	sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+		network={
+			ssid="SSID"
+			key_mgmt=WPA-PSK
+			scan_ssid=1
+			psk="passowrd"
+		}
+	
+	Ctrl + X
+
+sudo reboot
+
+git
+sudo apt-get install git
+
+sudo i2cdetect -y 1
+sudo apt-get install i2c-tools
+
+python3
+Ctrl + Z
+
+sudo apt-get install python3-rpi.gpio
+
+Install pip3
+	sudo apt install python3-pip
+
+Install board
+	pip3 install board
+
+Install busio
+	pip3 install adafruit-blinka
+	
+Install adafruit_bus_device
+	pip3 install adafruit-circuitpython-busdevice
