@@ -5,32 +5,11 @@ from multiprocessing import Process, Pipe
 import os
 import socket
 import configparser
+from Load_config import Config
 
 # 初始化GPIO
 GPIO.setwarnings(True)
 GPIO.setmode(GPIO.BCM)
-
-class Config(object):
-    def __init__(self):
-        self.config_file_path = 'config.cfg'
-        if not os.walk(self.config_file_path):
-            with open(self.config_file_path) as config_file:
-                # 写入默认配置文件
-                config_file.close()
-                pass
-        self.read()
-
-    # 读取config文件
-    def read(self):
-        self.conf = configparser.ConfigParser()
-        self.conf.read(self.config_file_path)
-
-    def write(self,name1,name2,value):
-        self.conf.set(name1, name2, value)
-        print(self.conf.get('UDP server','LOCALHOST'))
-        with open(self.config_file_path,'w') as config_file:
-            self.conf.write(config_file)
-            config_file.close()
 
 def get_temp(pipe_sensor):
     import units.dht11
@@ -89,7 +68,7 @@ def send_time(pipe_sensor):
     pipe_sensor.send({'server_time':get_time()})
 
 class MainAPP(Config):
-    def __init__(self, pipe_sensor):
+    def __init__(self, pipe_sensor, pipe_UDP):
         self.status = {'server_time':'N/A',
                 'temperature':'N/A', 
                 'humidity':'N/A',
@@ -117,6 +96,8 @@ class MainAPP(Config):
                     cache_file.write('\n')
                     self.status = dict(self.status, **data)
                     self.UDP_sender(data)
+                elif data = "send_to_UDP_server":
+                    pipe_UDP.send(self.status)
                 else:
                     continue
 
@@ -137,15 +118,15 @@ class MainAPP(Config):
             udp_socket.close()
 
 class UDP_server(Config):
-    def __init__(self):
+    def __init__(self, pipe_sensor, pipe_UDP):
         self.Get_local_IP()
         print("Localhost_IP = ",self.Localhost)
 
         self.ip_cache = []
-        self.add_new_client('10.0.10.10',9998)
 
         self.port = int(Config().conf.get('UDP server','PORT'))
         self.send_to_IP = [] #[[IP,port],...]
+        self.server()
 
     def Get_local_IP(self):
         try:
@@ -158,20 +139,26 @@ class UDP_server(Config):
         finally:
             s.close()
 
+    def log(self, ip, port):
+        UDP_log_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
+                                    Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
+        with open(IP_cache_file_path, 'w') as ip_cache_file:
+            ip_cache_file.write(str(self.ip_cache))
+
     def server(self):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
-        data, addr=server.recv(1024) #一次接收1024字节
-        print(data.decode(),'from',addr)# decode()解码收到的字节
-
-    def add_new_client(self, ip, port):
-        # 添加新客户端IP
-        if [ip, port] not in self.ip_cache:
-            self.ip_cache.append([ip, port])
-            IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
-                                        Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
-            with open(IP_cache_file_path, 'w') as ip_cache_file:
-                ip_cache_file.write(str(self.ip_cache))
+        while True:
+            data, client_addr=server.recv(1024) #一次接收1024字节
+            data = data.decode(encoding='utf-8').upper()
+            print(data.decode(),'from',aclient_addr)# decode()解码收到的字节
+            # # log
+            if data == "DATA":
+                pipe_sensor.send("send_to_UDP_server")
+                return_data = pipe_UDP.recv()
+                server.sendto(return_data.encode(encoding='utf-8'),client_addr)
+            else:
+                continue
 
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_main):
@@ -222,12 +209,13 @@ if __name__ == '__main__':
 
     pipe_sensor = Pipe()
     pipe_GPIO = Pipe()
+    pipe_UDP = Pipe()
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],))
+    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_UDP[0]))
     temp = Process(target=get_temp, args=(pipe_sensor[0],))
     height = Process(target=get_height, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    udp_server = Process(target=UDP_server)
+    udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1]))
     gpio_cont = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_GPIO[1]))
 
     mainapp.start()
