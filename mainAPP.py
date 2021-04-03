@@ -117,8 +117,6 @@ class UDP_server(Config):
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_timer):
         GPIO.setmode(GPIO.BCM)
-        print(GPIO_PIN_list)
-        print(STATUS_list)
         DHT11_waittime = Config().conf.getint('DHT11','wait_time')
         UR_waittime = Config().conf.getint('UR','wait_time')
 
