@@ -151,7 +151,7 @@ class UDP_server(Config):
         while True:
             data, client_addr=server.recvfrom(1024) #一次接收1024字节
             data = data.decode(encoding='utf-8').upper()
-            print(data.decode(),'from',aclient_addr)# decode()解码收到的字节
+            print(data,'from',aclient_addr)# decode()解码收到的字节
             # # log
             if data == "DATA":
                 pipe_sensor.send("send_to_UDP_server")
