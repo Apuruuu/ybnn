@@ -24,6 +24,7 @@ def get_temp(pipe_sensor):
         else:
             continue
         time.sleep(Wait_time)
+        GPIO.setmode(GPIO.BCM)
 
 def get_ADC_value(pipe_sensor):
     import units.ADS1x15
@@ -49,14 +50,14 @@ def get_height(pipe_sensor):
     GPIO.setmode(GPIO.BCM)
     import units.Ultrasonic_ranger
 
-    pin = int(Config().conf.get('SENSOR PIN','UR'))
-    Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
-
     while True:
+        pin = int(Config().conf.get('SENSOR PIN','UR'))
+        Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
         height = units.Ultrasonic_ranger.Get_depth(pin)
         pipe_sensor.send({'server_time':get_time(),
                             'height':height})
         time.sleep(Wait_time)
+        GPIO.setmode(GPIO.BCM)
 
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
