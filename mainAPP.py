@@ -158,6 +158,7 @@ class GPIO_CONT():
                 self.Turn_OFF(GPIO_PIN_list[i])
             else:
                 continue
+        time.sleep(1)
         GPIO.cleanup()
 
     def Turn_ON(self,PIN):
@@ -189,6 +190,7 @@ class sys_timer(Config):
         GPIO_CONT(self.GPIO_PIN,self.status)
         self.timer()
         self.status[7] = 0
+        print("设定dataled关")
         GPIO_CONT(self.GPIO_PIN,self.status)
 
         while True:
@@ -210,6 +212,7 @@ class sys_timer(Config):
             self.GPIO_PIN.append(Config().conf.getint('GPIO PIN', device))
             if device == 'run_led' or device == 'data_led':
                 self.status.append(1)
+                print("设定led开")
             else:
                 self.status.append(status.get(device,0))
 
@@ -217,6 +220,7 @@ class sys_timer(Config):
         for i in range(len(self.device_list)-2):
             self.status[i] = status.get(self.device_list[i],0)
         self.status[8] = not self.status[8]
+        print("设定新状态")
 
         return_status = {'server_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
         for device in self.device_list:
