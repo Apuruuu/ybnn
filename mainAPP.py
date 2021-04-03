@@ -146,6 +146,8 @@ class UDP_server(Config):
 
 class GPIO_CONT():
     def __init__(self,GPIO_PIN_list,STATUS_list):
+        print(GPIO_PIN_list)
+        print(STATUS_list)
         GPIO.setmode(GPIO.BCM)
         for i in range(len(GPIO_PIN_list)-1):
             if STATUS_list[i] == -1:
