@@ -95,38 +95,20 @@ class MainAPP(Config):
                     cache_file.write(str(data))
                     cache_file.write('\n')
                     self.status = dict(self.status, **data)
-                    self.UDP_sender(data)
                 elif data == "send_to_UDP_server":
                     pipe_UDP.send(self.status)
                 else:
                     continue
 
-    def UDP_sender(self, data):
-        IP_cache_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
-                                        Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
-        IP_cache = eval(open(IP_cache_file_path).read())
-        
-        for IP_PORT in IP_cache:
-            if IP_PORT[0] == None or IP_PORT[1] == None:
-                continue
-            udp_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-            local_addr = ("",7890)
-            udp_socket.bind(local_addr)
-            
-            send_data = str(self.status)
-            udp_socket.sendto(send_data.encode("utf-8"),(IP_PORT[0],IP_PORT[1]))
-            udp_socket.close()
-
 class UDP_server(Config):
     def __init__(self, pipe_sensor, pipe_UDP):
         self.Get_local_IP()
         print("Localhost_IP = ",self.Localhost)
-
-        self.ip_cache = []
-
         self.port = int(Config().conf.get('UDP server','PORT'))
-        self.send_to_IP = [] #[[IP,port],...]
         self.server(pipe_sensor, pipe_UDP)
+        self.UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_CACHE_PATH')),
+                                            str(Config().conf.get('Defult setting','UDP_log_file')),
+                                            str(time.strftime("%Y_%m_%d_%H_%M_%S.txt", time.localtime()))                                    )
 
     def Get_local_IP(self):
         try:
@@ -140,10 +122,9 @@ class UDP_server(Config):
             s.close()
 
     def log(self, ip, port):
-        UDP_log_file_path = os.path.join(Config().conf.get('Defult setting','DEFULT_CACHE_PATH'),
-                                    Config().conf.get('Defult setting','DEFULT_IP_CACHE_FILE'))
-        with open(IP_cache_file_path, 'w') as ip_cache_file:
-            ip_cache_file.write(str(self.ip_cache))
+        log = 0
+        with open(self.UDP_log_file_path, 'w') as udp_log:
+            udp_log.write(str(log))
 
     def server(self, pipe_sensor, pipe_UDP):
         server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
