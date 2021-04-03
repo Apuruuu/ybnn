@@ -7,24 +7,7 @@ import socket
 import configparser
 from Load_config import Config
 
-def get_temp(pipe_sensor):
-    GPIO.setmode(GPIO.BCM)
-    import units.dht11
 
-    while True:
-        pin=int(Config().conf.get('SENSOR PIN','DHT11'))
-        instance = units.dht11.DHT11(pin)
-        Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
-        result = instance.read()
-        if result.is_valid():
-            pipe_sensor.send({'server_time':get_time(),
-                                'temperature':result.temperature,
-                                'humidity':result.humidity})
-            print(result.temperature,result.humidity)
-        else:
-            continue
-        time.sleep(Wait_time)
-        GPIO.setmode(GPIO.BCM)
 
 def get_ADC_value(pipe_sensor):
     import units.ADS1x15
@@ -46,18 +29,6 @@ def get_ADC_value(pipe_sensor):
                         'ADC4_A3':values[3]})
         time.sleep(Wait_time)
 
-def get_height(pipe_sensor):
-    GPIO.setmode(GPIO.BCM)
-    import units.Ultrasonic_ranger
-
-    while True:
-        pin = int(Config().conf.get('SENSOR PIN','UR'))
-        Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
-        height = units.Ultrasonic_ranger.Get_depth(pin)
-        pipe_sensor.send({'server_time':get_time(),
-                            'height':height})
-        time.sleep(Wait_time)
-        GPIO.setmode(GPIO.BCM)
 
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -146,21 +117,30 @@ class UDP_server(Config):
                 continue
 
 class GPIO_CONT():
-    def __init__(self,GPIO_PIN_list,STATUS_list):
+    def __init__(self,pipe_sensor,pipe_timer):
+        GPIO.setmode(GPIO.BCM)
         print(GPIO_PIN_list)
         print(STATUS_list)
-        GPIO.setmode(GPIO.BCM)
-        for i in range(len(GPIO_PIN_list)-1):
-            if STATUS_list[i] == -1:
-                self.Turn_ON(GPIO_PIN_list[i])
-            if STATUS_list[i] > 0:
-                self.Turn_ON(GPIO_PIN_list[i])
-            if STATUS_list[i] == 0:
-                self.Turn_OFF(GPIO_PIN_list[i])
-            else:
-                continue
-        time.sleep(1)
-        GPIO.cleanup()
+        DHT11_waittime = Config().conf.getint('DHT11','wait_time')
+        UR_waittime = Config().conf.getint('UR','wait_time')
+
+        for t in range(DHT11_waittime*UR_waittime):
+            GPIO_PIN_list, STATUS_list = pipe_timer.recv()
+            for i in range(len(GPIO_PIN_list)-1):
+                if STATUS_list[i] == -1:
+                    self.Turn_ON(GPIO_PIN_list[i])
+                if STATUS_list[i] > 0:
+                    self.Turn_ON(GPIO_PIN_list[i])
+                if STATUS_list[i] == 0:
+                    self.Turn_OFF(GPIO_PIN_list[i])
+                else:
+                    continue
+
+            if t % DHT11_waittime == 0 :
+                self.get_temp(pipe_sensor)
+            if t % UR_waittime == 0 :
+                # self.get_height(pipe_sensor)
+                pass
 
     def Turn_ON(self,PIN):
         print('OPEN')
@@ -172,17 +152,39 @@ class GPIO_CONT():
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN, GPIO.OUT)
         GPIO.output(PIN, GPIO.LOW)
-        
-def Data_LED_Flash(on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(PIN, GPIO.OUT)
-    GPIO.output(PIN, GPIO.HIGH)
-    time.sleep(on_time)
-    GPIO.output(PIN, GPIO.LOW)
-    GPIO.cleanup()
+        GPIO.cleanup(PIN)
+
+    def Data_LED_Flash(self, on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
+        GPIO.setup(PIN, GPIO.OUT)
+        GPIO.output(PIN, GPIO.HIGH)
+        time.sleep(on_time)
+        GPIO.output(PIN, GPIO.LOW)
+        GPIO.cleanup(PIN)
+
+    def get_temp(pipe_sensor):
+        import units.dht11
+
+        pin=int(Config().conf.get('SENSOR PIN','DHT11'))
+        instance = units.dht11.DHT11(pin)
+        while True:
+            result = instance.read()
+            if result.is_valid():
+                pipe_sensor.send({'server_time':get_time(),'temperature':result.temperature,'humidity':result.humidity})
+                print(result.temperature,result.humidity)
+                break
+            else:
+                continue
+
+    def get_height(pipe_sensor):
+        import units.Ultrasonic_ranger
+
+        pin = int(Config().conf.get('SENSOR PIN','UR'))
+        Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
+        height = units.Ultrasonic_ranger.Get_depth(pin)
+        pipe_sensor.send({'server_time':get_time(),'height':height})
     
 class sys_timer(Config):
-    def __init__(self, pipe_sensor, pipe_GPIO):
+    def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
         pipe_sensor.send(str("GPIO"))
         status = pipe_GPIO.recv()
         self.time_start = time.time()
@@ -190,16 +192,16 @@ class sys_timer(Config):
         self.GPIO_PIN = []
         self.status = []
         self.get_GPIO_PIN(status)
-        GPIO_CONT(self.GPIO_PIN,self.status)
+        pipe_timer.send(self.GPIO_PIN, self.status)
         self.timer()
         self.status[7] = 0
         print("设定dataled关")
-        GPIO_CONT(self.GPIO_PIN,self.status)
+        pipe_timer.send(self.GPIO_PIN, self.status)
 
         while True:
             self.timer()
             pipe_sensor.send(self.update_status(status))
-            GPIO_CONT(self.GPIO_PIN,self.status)
+            pipe_timer.send(self.GPIO_PIN, self.status)
             pipe_sensor.send(str("GPIO"))
             status = pipe_GPIO.recv()
 
@@ -252,13 +254,15 @@ if __name__ == '__main__':
     height = Process(target=get_height, args=(pipe_sensor[0],))
     adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
     udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1]))
-    sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1]))
+    gpio = Process(target=get_ADC_value, args=(pipe_sensor[0],pipe_timer[1]))
+    sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1]),pipe_timer[0])
 
     mainapp.start()
     temp.start()
     height.start()
     adc.start()
     udp_server.start()
+    gpio.start()
     sys_timer.start()
 
     mainapp.join()
@@ -266,6 +270,7 @@ if __name__ == '__main__':
     height.join()
     adc.join()
     udp_server.join()
+    gpio.join()
     sys_timer.join()
 
 # 结束子进程？
