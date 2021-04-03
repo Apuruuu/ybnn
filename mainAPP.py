@@ -116,6 +116,7 @@ class UDP_server(Config):
 
 class GPIO_CONT():
     def __init__(self,pipe_sensor,pipe_timer):
+        GPIO.cleanup()
         GPIO.setmode(GPIO.BCM)
 
         self.pipe_sensor = pipe_sensor
