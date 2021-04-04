@@ -188,11 +188,11 @@ class GPIO_CONT():
         self.pipe_sensor.send({'height':[height, selftime]})
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
+        self.device_list = Config().conf.options('GPIO PIN')
         pipe_sensor.send(str("GPIO"))
         status = self.reformat(pipe_GPIO.recv())
         self.time_start = time.time()
         self.t = 0
-        self.device_list = Config().conf.options('GPIO PIN')
         self.GPIO_PIN = []
         self.status = []
         self.get_GPIO_PIN(status)
