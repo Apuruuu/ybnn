@@ -196,7 +196,7 @@ class sys_timer(Config):
         self.get_GPIO_PIN(status)
         pipe_timer.send([self.GPIO_PIN, self.status])
         self.timer()
-        self.status[7] = 0
+        self.status[7] = [0 ,'N/A']
         pipe_timer.send([self.GPIO_PIN, self.status])
 
         while True:
@@ -214,12 +214,13 @@ class sys_timer(Config):
 
     def get_GPIO_PIN(self,status):
         self.device_list = Config().conf.options('GPIO PIN')
+        selftime = get_time()
         for device in self.device_list:
             self.GPIO_PIN.append(Config().conf.getint('GPIO PIN', device))
             if device == 'run_led' or device == 'data_led':
-                self.status.append(1)
+                self.status.append([1, selftime])
             else:
-                self.status.append(status.get(device,0))
+                self.status.append(status.get(device,[0, selftime])
 
     def update_status(self, status):
         for i in range(len(self.device_list)-2):
