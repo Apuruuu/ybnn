@@ -211,8 +211,7 @@ class sys_timer(Config):
     def reformat(self, status):
         new_status = {}
         for device in self.device_list:
-            d = status[device]
-            new_status[device] = status[device][0]
+            new_status[device] = status.get(device,[0, 'N/A'])[0]
         print(new_status)
         return new_status
 
