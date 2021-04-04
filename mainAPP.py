@@ -214,13 +214,12 @@ class sys_timer(Config):
 
     def get_GPIO_PIN(self,status):
         self.device_list = Config().conf.options('GPIO PIN')
-        selftime = get_time()
         for device in self.device_list:
             self.GPIO_PIN.append(Config().conf.getint('GPIO PIN', device))
             if device == 'run_led' or device == 'data_led':
-                self.status.append([1, selftime])
+                self.status.append([1, 'N/A'])
             else:
-                self.status.append(status.get(device,[0, selftime]))
+                self.status.append(status.get(device,[0, 'N/A']))
 
     def update_status(self, status):
         for i in range(len(self.device_list)-2):
@@ -228,10 +227,11 @@ class sys_timer(Config):
         self.status[8] = not self.status[8]
 
         return_status = {'server_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+        selftime = get_time()
         for device in self.device_list:
             if device in status:
-                if status[device] >0:
-                    return_status[device] = status[device] - 1
+                if status[device][0] >0:
+                    return_status[device] = [status[device][0]-1, selftime]
             else:
                 continue
         return return_status
