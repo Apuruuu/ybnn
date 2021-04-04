@@ -212,7 +212,6 @@ class sys_timer(Config):
         new_status = {}
         for device in self.device_list:
             new_status[device] = status.get(device,[0, 'N/A'])[0]
-        print(new_status)
         return new_status
 
     def timer(self,sleep_time=1):
@@ -239,7 +238,7 @@ class sys_timer(Config):
         for device in self.device_list:
             if device in status:
                 if status[device] >0:
-                    return_status[device] = [status[device][0]-1, selftime]
+                    return_status[device] = [status[device] -1, selftime]
             else:
                 continue
         return return_status
