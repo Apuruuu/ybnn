@@ -144,8 +144,10 @@ class GPIO_CONT():
 
                 if t % DHT11_waittime == 0 :
                     self.get_temp()
+                    self.Data_LED_Flash()
                 if t % UR_waittime == 0 :
-                    # self.get_height()
+                    self.get_height()
+                    self.Data_LED_Flash()
                     pass
 
     def Turn_ON(self,PIN):
