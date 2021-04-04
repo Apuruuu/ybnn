@@ -136,11 +136,11 @@ class GPIO_CONT():
                 GPIO_PIN_list, STATUS_list = pipe_timer.recv()
                 print(STATUS_list)
                 for i in range(len(GPIO_PIN_list)-1):
-                    if STATUS_list[i][0] == -1:
+                    if STATUS_list[i] == -1:
                         self.Turn_ON(GPIO_PIN_list[i])
-                    if STATUS_list[i][0] > 0:
+                    if STATUS_list[i] > 0:
                         self.Turn_ON(GPIO_PIN_list[i])
-                    if STATUS_list[i][0] == 0:
+                    if STATUS_list[i] == 0:
                         self.Turn_OFF(GPIO_PIN_list[i])
                     else:
                         continue
@@ -189,15 +189,16 @@ class GPIO_CONT():
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
         pipe_sensor.send(str("GPIO"))
-        status = pipe_GPIO.recv()
+        status = self.reformat(pipe_GPIO.recv())
         self.time_start = time.time()
         self.t = 0
+        self.device_list = Config().conf.options('GPIO PIN')
         self.GPIO_PIN = []
         self.status = []
         self.get_GPIO_PIN(status)
         pipe_timer.send([self.GPIO_PIN, self.status])
         self.timer()
-        self.status[7] = [0 ,'N/A']
+        self.status[7] = 0
         pipe_timer.send([self.GPIO_PIN, self.status])
 
         while True:
@@ -205,7 +206,15 @@ class sys_timer(Config):
             pipe_sensor.send(self.update_status(status))
             pipe_timer.send([self.GPIO_PIN, self.status])
             pipe_sensor.send(str("GPIO"))
-            status = pipe_GPIO.recv()
+            status = self.reformat(pipe_GPIO.recv())
+
+    def reformat(self, status):
+        new_status = {}
+        for device in self.device_list:
+            d = status[device]
+            new_status[device] = status[device][0]
+        print(new_status)
+        return new_status
 
     def timer(self,sleep_time=1):
         t = self.t + sleep_time
@@ -214,13 +223,12 @@ class sys_timer(Config):
         self.t = t
 
     def get_GPIO_PIN(self,status):
-        self.device_list = Config().conf.options('GPIO PIN')
         for device in self.device_list:
             self.GPIO_PIN.append(Config().conf.getint('GPIO PIN', device))
             if device == 'run_led' or device == 'data_led':
-                self.status.append([1, 'N/A'])
+                self.status.append(1)
             else:
-                self.status.append(status.get(device,[0, 'N/A']))
+                self.status.append(status.get(device, 0))
 
     def update_status(self, status):
         for i in range(len(self.device_list)-2):
@@ -231,7 +239,7 @@ class sys_timer(Config):
         selftime = get_time()
         for device in self.device_list:
             if device in status:
-                if status[device][0] >0:
+                if status[device] >0:
                     return_status[device] = [status[device][0]-1, selftime]
             else:
                 continue
