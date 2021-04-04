@@ -220,7 +220,7 @@ class sys_timer(Config):
             if device == 'run_led' or device == 'data_led':
                 self.status.append([1, selftime])
             else:
-                self.status.append(status.get(device,[0, selftime])
+                self.status.append(status.get(device,[0, selftime]))
 
     def update_status(self, status):
         for i in range(len(self.device_list)-2):
