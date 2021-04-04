@@ -22,32 +22,34 @@ def get_ADC_value(pipe_sensor):
         for i in range(4):
             values[i] = adc.read_adc(i, gain=GAIN)
         print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
-        pipe_sensor.send({'server_time':get_time(),
-                        'PH':values[0],
-                        'turbidity':values[1],
-                        'ADC3_A2':values[2],
-                        'ADC4_A3':values[3]})
+        selftime = get_time()
+        pipe_sensor.send({'PH':[values[0], selftime],
+                            'turbidity':[values[1], selftime],
+                            'ADC3_A2':[values[2], selftime],
+                            'ADC4_A3':[values[3], selftime]})
         time.sleep(Wait_time)
-
 
 def get_time():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 class MainAPP(Config):
     def __init__(self, pipe_sensor, pipe_UDP, pipe_GPIO):
-        self.status = {'server_time':'N/A',
-                'temperature':'N/A', 
-                'humidity':'N/A',
-                'water_temperature':'N/A',
-                'PH':'N/A',
-                'lumen':'N/A',
-                'turbidity':'N/A',
-                'height':'N/A',
-                'light':0,
-                'pump_air':0,
-                'pump_1':0,
-                'pump2':0,
-                'magnetic_stitter':0,
+        self.status = {'server_time':['N/A', 'N/A'],
+                'temperature':['N/A', 'N/A'], 
+                'humidity':['N/A', 'N/A'],
+                'water_temperature':['N/A', 'N/A'],
+                'PH':['N/A', 'N/A'],
+                'lumen':['N/A', 'N/A'],
+                'turbidity':['N/A', 'N/A'],
+                'height':['N/A', 'N/A'],
+                'light':[0, 'N/A'],
+                'pump_air':[0, 'N/A'],
+                'pump_1':[0, 'N/A'],
+                'pump2':[0, 'N/A'],
+                'magnetic_stitter':[0, 'N/A'],
+                'G5':[0, 'N/A'],
+                'G6':[0, 'N/A'],
+                'G7':[0, 'N/A'],
                 }
 
         log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')),
@@ -148,7 +150,6 @@ class GPIO_CONT():
                 if t % UR_waittime == 0 :
                     self.get_height()
                     self.Data_LED_Flash()
-                    pass
 
     def Turn_ON(self,PIN):
         GPIO.output(PIN, GPIO.HIGH)
@@ -169,7 +170,8 @@ class GPIO_CONT():
         while True:
             result = instance.read()
             if result.is_valid():
-                self.pipe_sensor.send({'server_time':get_time(),'temperature':result.temperature,'humidity':result.humidity})
+                selftime = get_time()
+                self.pipe_sensor.send({'temperature':[result.temperature, selftime],'humidity':[result.humidity, selftime]})
                 print(result.temperature,result.humidity)
                 break
             else:
@@ -181,8 +183,8 @@ class GPIO_CONT():
         pin = int(Config().conf.get('SENSOR PIN','UR'))
         Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
         height = units.Ultrasonic_ranger.Get_depth(pin)
-        self.pipe_sensor.send({'server_time':get_time(),'height':height})
-    
+        selftime = get_time()
+        self.pipe_sensor.send({'height':[height, selftime]})
 class sys_timer(Config):
     def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
         pipe_sensor.send(str("GPIO"))
