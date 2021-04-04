@@ -134,6 +134,7 @@ class GPIO_CONT():
         while True:
             for t in range(DHT11_waittime*UR_waittime):
                 GPIO_PIN_list, STATUS_list = pipe_timer.recv()
+                print(STATUS_list)
                 for i in range(len(GPIO_PIN_list)-1):
                     if STATUS_list[i][0] == -1:
                         self.Turn_ON(GPIO_PIN_list[i])
