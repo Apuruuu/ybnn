@@ -23,7 +23,7 @@ class mqtt_pub():
 
 def server_time():
     _mqtt_pub = mqtt_pub()
-    topic = "sensor/time"
+    topic = "homeassistant/sensor/time"
 
     while True:
         data = {"time":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
