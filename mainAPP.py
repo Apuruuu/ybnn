@@ -1,19 +1,43 @@
 import RPi.GPIO as GPIO
 import time
-from multiprocessing import Process, Pipe
+from multiprocessing import Process
+import paho.mqtt.client as mqtt
+import json
 
-import os
-import socket
-import configparser
 from Load_config import Config
 
+class mqtt_pub():
+    def __init__(self):
+        self.HOST = Config().conf.get('mqtt', 'host')
+        self.PORT = Config().conf.getint('mqtt', 'port')
+        username = Config().conf.get('mqtt', 'username')
+        passwd = Config().conf.get('mqtt', 'passwd')
+        self.client = mqtt.Client()
+        self.client.username_pw_set(username, passwd)
+        self.client.connect(self.HOST, self.PORT, 60)
 
+    def sender(self,data,topic):
+        param = json.dumps(data)
+        self.client.publish(topic, payload=param, qos=0)     # 发送消息
+        print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
 
-def get_ADC_value(pipe_sensor):
+def server_time():
+    _mqtt_pub = mqtt_pub()
+    topic = "sensor/time"
+
+    while True:
+        data = {"time":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+        _mqtt_pub.sender(data, topic)
+        time.sleep(1)
+
+def get_ADC_value():
     import units.ADS1x15
 
     adc = units.ADS1x15.ADS1115()
     GAIN = Config().conf.getint('ADC','GAIN')
+
+    _mqtt_pub = mqtt_pub()
+    topic = Config().conf.get('ADC','topic')
     Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
 
     while True:
@@ -21,258 +45,130 @@ def get_ADC_value(pipe_sensor):
         values = [0]*4
         for i in range(4):
             values[i] = adc.read_adc(i, gain=GAIN)
-        print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
-        selftime = get_time()
-        pipe_sensor.send({'PH':[values[0], selftime],
-                            'turbidity':[values[1], selftime],
-                            'ADC3_A2':[values[2], selftime],
-                            'ADC4_A3':[values[3], selftime]})
+        # ADC debug
+        # print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
+
+        data = {'PH':values[0], 'turbidity':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]}
+        _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
 
-def get_time():
-    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+def get_temperature():
+    import units.dht11
 
-class MainAPP(Config):
-    def __init__(self, pipe_sensor, pipe_UDP, pipe_GPIO):
-        self.status = {'server_time':['N/A', 'N/A'],
-                'temperature':['N/A', 'N/A'], 
-                'humidity':['N/A', 'N/A'],
-                'water_temperature':['N/A', 'N/A'],
-                'PH':['N/A', 'N/A'],
-                'lumen':['N/A', 'N/A'],
-                'turbidity':['N/A', 'N/A'],
-                'height':['N/A', 'N/A'],
-                'light':[0, 'N/A'],
-                'pump_air':[0, 'N/A'],
-                'pump_1':[0, 'N/A'],
-                'pump2':[0, 'N/A'],
-                'magnetic_stitter':[0, 'N/A'],
-                'G5':[0, 'N/A'],
-                'G6':[0, 'N/A'],
-                'G7':[0, 'N/A'],
-                }
+    pin=int(Config().conf.get('SENSOR PIN','DHT11'))
+    instance = units.dht11.DHT11(pin)
 
-        log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')),
-                                        str(time.strftime("%Y_%m_%d_%H_%M_%S.txt", time.localtime())))
-        with open(log_file_path, 'a') as log_file:
-            while True:
-                data = pipe_sensor.recv()
-                if isinstance(data,dict):
-                    print(data)
-                    # 写入文件
-                    log_file.write(str(data))
-                    log_file.write('\n')
-                    self.status = dict(self.status, **data)
-                elif data == "send_to_UDP_server":
-                    pipe_UDP.send(self.status)
-                elif data == "GPIO":
-                    pipe_GPIO.send(self.status)
-                else:
-                    continue
+    _mqtt_pub = mqtt_pub()
+    topic = Config().conf.get('DHT11','topic')
+    Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
 
-class UDP_server(Config):
-    def __init__(self, pipe_sensor, pipe_UDP):
-        self.Get_local_IP()
-        self.port = int(Config().conf.get('UDP SERVER','PORT'))
-        self.server(pipe_sensor, pipe_UDP)
-        self.UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')),
-                                            str(Config().conf.get('Defult setting','UDP_log_file_path')),
-                                            str(time.strftime("%Y_%m_%d_%H_%M_%S.txt", time.localtime())))
+    while True:
+        result = instance.read()
+        if result.is_valid():
+            data = {'temperature':result.temperature, 'humidity':result.humidity}
+            _mqtt_pub.sender(data, topic)
+            time.sleep(Wait_time)
+            break
+        else:
+            continue
 
-    def Get_local_IP(self):
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(('8.8.8.8', 80))
-            self.Localhost = s.getsockname()[0]
-            Config().write('UDP SERVER','LOCALHOST',self.Localhost)
-        finally:
-            s.close()
+def get_height():
+    import units.Ultrasonic_ranger
 
-    def log(self, ip, port):
-        log = 0
-        with open(self.UDP_log_file_path, 'a') as udp_log:
-            udp_log.write(str(log))
-            udp_log.write("\n")
+    pin = int(Config().conf.get('SENSOR PIN','UR'))
 
-    def server(self, pipe_sensor, pipe_UDP):
-        server = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        server.bind((self.Localhost, self.port)) #绑定服务器的ip和端口
-        print("UDP server",self.Localhost,"liscening",self.port)
-        while True:
-            data, client_addr=server.recvfrom(1024) #一次接收1024字节
-            data = data.decode(encoding='utf-8').upper()
-            print(data,'from',client_addr)# decode()解码收到的字节
-            data = eval(data)
-            # # log
-            if data['COMMAND'] == 'GET_DATA': # 获取数据
-                message = "send_to_UDP_server"
-                pipe_sensor.send(str(message))
-                return_data = pipe_UDP.recv()
-                server.sendto(str(return_data).encode(encoding='utf-8'),client_addr)
-                print(return_data,"send to",client_addr)
-            elif data['COMMAND'] == 1: # 硬件操作
-                pipe_sensor.send({data['DEVICE_NAME'],data['ON_TIME']})
+    C_width = int(Config().conf.get('UR','width'))
+    C_depth = int(Config().conf.get('UR','depth'))
+    C_height = int(Config().conf.get('UR','height'))
 
-            else:
-                continue
-
-class GPIO_CONT():
-    def __init__(self,pipe_sensor,pipe_timer):
-        GPIO.cleanup()
-        GPIO.setmode(GPIO.BCM)
-
-        self.pipe_sensor = pipe_sensor
-
-        DHT11_waittime = Config().conf.getint('DHT11','wait_time')
-        UR_waittime = Config().conf.getint('UR','wait_time')
-
-        GPIO_PIN_list,_ = pipe_timer.recv()
-        #set pin out
-        for PIN in GPIO_PIN_list:
-            GPIO.setup(PIN, GPIO.OUT)
-
-        while True:
-            for t in range(DHT11_waittime*UR_waittime):
-                GPIO_PIN_list, STATUS_list = pipe_timer.recv()
-                for i in range(len(GPIO_PIN_list)-1):
-                    if STATUS_list[i] == -1:
-                        self.Turn_ON(GPIO_PIN_list[i])
-                    if STATUS_list[i] > 0:
-                        self.Turn_ON(GPIO_PIN_list[i])
-                    if STATUS_list[i] == 0:
-                        self.Turn_OFF(GPIO_PIN_list[i])
-                    else:
-                        continue
-
-                if t % DHT11_waittime == 0 :
-                    self.get_temp()
-                    self.Data_LED_Flash()
-                if t % UR_waittime == 0 :
-                    self.get_height()
-                    self.Data_LED_Flash()
-
-    def Turn_ON(self,PIN):
-        GPIO.output(PIN, GPIO.HIGH)
-
-    def Turn_OFF(self,PIN):
-        GPIO.output(PIN, GPIO.LOW)
-
-    def Data_LED_Flash(self, on_time=0.2, PIN=Config().conf.getint('GPIO PIN', 'data_led')):
-        GPIO.output(PIN, GPIO.HIGH)
-        time.sleep(on_time)
-        GPIO.output(PIN, GPIO.LOW)
-
-    def get_temp(self):
-        import units.dht11
-
-        pin=int(Config().conf.get('SENSOR PIN','DHT11'))
-        instance = units.dht11.DHT11(pin)
-        while True:
-            result = instance.read()
-            if result.is_valid():
-                selftime = get_time()
-                self.pipe_sensor.send({'temperature':[result.temperature, selftime],'humidity':[result.humidity, selftime]})
-                print(result.temperature,result.humidity)
-                break
-            else:
-                continue
-
-    def get_height(self):
-        import units.Ultrasonic_ranger
-
-        pin = int(Config().conf.get('SENSOR PIN','UR'))
-        Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
+    _mqtt_pub = mqtt_pub()
+    topic = Config().conf.get('UR','topic')
+    Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
+    while True:
         height = units.Ultrasonic_ranger.Get_depth(pin)
-        selftime = get_time()
-        self.pipe_sensor.send({'height':[height, selftime]})
-class sys_timer(Config):
-    def __init__(self, pipe_sensor, pipe_GPIO, pipe_timer):
-        self.device_list = Config().conf.options('GPIO PIN')
-        pipe_sensor.send(str("GPIO"))
-        status = self.reformat(pipe_GPIO.recv())
-        self.time_start = time.time()
-        self.t = 0
-        self.GPIO_PIN = []
-        self.status = []
-        self.get_GPIO_PIN(status)
-        pipe_timer.send([self.GPIO_PIN, self.status])
-        self.timer()
-        self.status[7] = 0
-        pipe_timer.send([self.GPIO_PIN, self.status])
+        volume = (C_depth * C_width * (C_height-height)) / 1000
+        data = {'height':height, 'volume':volume}
+        _mqtt_pub.sender(data, topic)
+        time.sleep(Wait_time)
+class mqtt_sub():
+    def __init__(self):
+        HOST = Config().conf.get('mqtt', 'host')
+        PORT = Config().conf.getint('mqtt', 'port')
+        username = Config().conf.get('mqtt', 'username')
+        passwd = Config().conf.get('mqtt', 'passwd')
+        command_topic = str(Config().conf.get('mqtt', 'root_topic')) + '#'
 
-        while True:
-            self.timer()
-            pipe_sensor.send(self.update_status(status))
-            pipe_timer.send([self.GPIO_PIN, self.status])
-            pipe_sensor.send(str("GPIO"))
-            status = self.reformat(pipe_GPIO.recv())
+        def on_connect(client, userdata, flags, rc):
+            print("Connected with result code: " + str(rc))
 
-    def reformat(self, status):
-        new_status = {}
-        for device in self.device_list:
-            new_status[device] = status.get(device,[0, 'N/A'])[0]
-        return new_status
+        def on_message(client, userdata, msg):
+            self.controller(msg.topic, msg.payload)
+        
+        self.client = mqtt.Client()
+        self.client.username_pw_set(username, password=passwd)
+        self.client.on_connect = on_connect
+        self.client.connect(HOST, PORT, 600) # 600为keepalive的时间间隔
+        self.client.subscribe(command_topic, qos=0)
+        
+        self.client.on_message = on_message
+        self.client.loop_forever() # 保持连接
 
-    def timer(self,sleep_time=1):
-        t = self.t + sleep_time
-        while time.time() - self.time_start < self.t + sleep_time:
-            time.sleep(0.01)
-        self.t = t
+    def controller(self, topic, data):
+        mode = topic.split("/")[-1]
+        device = topic.split("/")[-2]
+        value = data.decode('utf-8')
 
-    def get_GPIO_PIN(self,status):
-        for device in self.device_list:
-            self.GPIO_PIN.append(Config().conf.getint('GPIO PIN', device))
-            if device == 'run_led' or device == 'data_led':
-                self.status.append(1)
-            else:
-                self.status.append(status.get(device, 0))
+        def set_device(GPIO_PIN, value):
+            if value == 1:
+                GPIO.output(GPIO_PIN, GPIO.HIGH)
+            elif value == 0:
+                GPIO.output(GPIO_PIN, GPIO.LOW)
+            return True
 
-    def update_status(self, status):
-        for i in range(len(self.device_list)-2):
-            self.status[i] = status.get(self.device_list[i],0)
-        self.status[8] = not self.status[8]
+        if mode == 'set':
+            GPIO_PIN = Config().conf.getint('GPIO PIN',device)
+            print('device: %s on Gpin(%d)[%s] set to %d'%(Config().conf.getint('devices',device),GPIO_PIN,device,value))
+            if set_device(GPIO_PIN, value):
+                state_topic = str(Config().conf.get('mqtt', 'root_topic')) + str(device)
+                _mqtt_pub=mqtt_pub()
+                _mqtt_pub.sender(int(value), state_topic)
 
-        return_status = {'server_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
-        selftime = get_time()
-        for device in self.device_list:
-            if device in status:
-                if status[device] >0:
-                    return_status[device] = [status[device] -1, selftime]
-            else:
-                continue
-        return return_status
+def run_led():
+    GPIO_PIN = Config().conf.getint('GPIO PIN','run_led')
+    while True:
+        GPIO.output(GPIO_PIN, GPIO.HIGH)
+        time.sleep(1)
+        GPIO.output(GPIO_PIN, GPIO.LOW)
+        time.sleep(1)
+
+def data_led(value):
+    GPIO_PIN = Config().conf.getint('GPIO PIN','data_led')
+    if value == 1:
+        GPIO.output(GPIO_PIN, GPIO.HIGH)
+    elif value == 0:
+        GPIO.output(GPIO_PIN, GPIO.LOW)
 
 if __name__ == '__main__':
-    log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_LOG_PATH')))
-    UDP_log_file_path = os.path.join(str(Config().conf.get('Defult setting','DEFULT_log_PATH')),
-                                    str(Config().conf.get('UDP SERVER','UDP_log_file_path')))
-    if not os.path.exists(log_file_path):
-        os.mkdir(log_file_path)
-    if not os.path.exists(UDP_log_file_path):
-        os.mkdir(UDP_log_file_path)
+    GPIO.cleanup()
+    GPIO.setmode(GPIO.BCM)
 
-    pipe_sensor = Pipe()
-    pipe_GPIO = Pipe()
-    pipe_UDP = Pipe()
-    pipe_timer = Pipe()
+    SERVER_TIME = Process(target=server_time, args=())
+    GET_ADC_VALUE = Process(target=get_ADC_value, args=())
+    GET_TEMPERATURE = Process(target=get_temperature, args=())
+    GET_HEIGHT = Process(target=get_height, args=())
+    MQTT_SUB = Process(target=mqtt_sub, args=())
+    RUN_LED = Process(target=run_led, args=())
 
-    mainapp = Process(target=MainAPP, args=(pipe_sensor[1],pipe_UDP[0],pipe_GPIO[0]))
-    adc = Process(target=get_ADC_value, args=(pipe_sensor[0],))
-    udp_server = Process(target=UDP_server, args=(pipe_sensor[0],pipe_UDP[1]))
-    gpio = Process(target=GPIO_CONT, args=(pipe_sensor[0],pipe_timer[1]))
-    sys_timer = Process(target=sys_timer, args=(pipe_sensor[0],pipe_GPIO[1],pipe_timer[0]))
+    SERVER_TIME.start()
+    GET_ADC_VALUE.start()
+    GET_TEMPERATURE.start()
+    GET_HEIGHT.start()
+    MQTT_SUB.start()
+    RUN_LED.start()
 
-    mainapp.start()
-    adc.start()
-    udp_server.start()
-    gpio.start()
-    sys_timer.start()
-
-    mainapp.join()
-    adc.join()
-    udp_server.join()
-    gpio.join()
-    sys_timer.join()
-
-# 结束子进程？
-    # p.process.signal(signal.SIGINT)
+    SERVER_TIME.join()
+    GET_ADC_VALUE.join()
+    GET_TEMPERATURE.join()
+    GET_HEIGHT.join()
+    MQTT_SUB.join()
+    RUN_LED.join()
