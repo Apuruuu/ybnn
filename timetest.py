@@ -7,13 +7,19 @@ from Load_config import Config
 
 class mqtt_pub():
     def __init__(self):
-        self.HOST = Config().conf.get('mqtt', 'host')
-        self.PORT = Config().conf.getint('mqtt', 'port')
-        username = Config().conf.get('mqtt', 'username')
-        passwd = Config().conf.get('mqtt', 'passwd')
+        self.HOST = '10.0.0.1'
+        self.PORT = 1883
+        username = 'mqtt'
+        passwd = ''
+        def on_connect(client, userdata, flags, rc):
+            if rc==0:
+                print("connected OK Returned code=",rc)
+            else:
+                print("Bad connection Returned code=",rc)
         self.client = mqtt.Client()
         self.client.username_pw_set(username, passwd)
         self.client.connect(self.HOST, self.PORT, 60)
+        on_connect(self.client)
 
     def sender(self,data,topic):
         param = json.dumps(data)
