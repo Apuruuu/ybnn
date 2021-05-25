@@ -68,7 +68,6 @@ def get_temperature():
             data = {'temperature':result.temperature, 'humidity':result.humidity}
             _mqtt_pub.sender(data, topic)
             time.sleep(Wait_time)
-            break
         else:
             continue
 
@@ -90,6 +89,7 @@ def get_height():
         data = {'height':height, 'volume':volume}
         _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
+
 class mqtt_sub():
     def __init__(self):
         HOST = Config().conf.get('mqtt', 'host')
