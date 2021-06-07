@@ -135,9 +135,9 @@ class mqtt_sub():
 
         def set_device(GPIO_PIN, value):
             GPIO.setup(GPIO_PIN, GPIO.OUT)
-            if value == 1:
+            if value == 0:
                 GPIO.output(GPIO_PIN, GPIO.HIGH)
-            elif value == 0:
+            elif value == 1:
                 GPIO.output(GPIO_PIN, GPIO.LOW)
             return True
 
