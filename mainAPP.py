@@ -143,7 +143,7 @@ class mqtt_sub():
 
         if mode == 'set':
             GPIO_PIN = Config().conf.getint('GPIO PIN',device)
-            print('device: %s on Gpin(%d)[%s] set to %d'%(Config().conf.getint('devices',device),GPIO_PIN,device,value))
+            print('device: %s on Gpin(%d)[%s] set to %d'%(Config().conf.get('devices',device),GPIO_PIN,device,value))
             if set_device(GPIO_PIN, value):
                 state_topic = str(Config().conf.get('mqtt', 'root_topic')) + str(device)
                 _mqtt_pub=mqtt_pub()
@@ -170,8 +170,11 @@ if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
 
-    time.sleep(30) # 等待网络启动
+    # wait network
     print("waiting network 30 Seconds")
+    for i in range(3):
+        print((i+1)*10, Seconds)
+        time.sleep(10)
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
