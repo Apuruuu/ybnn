@@ -90,6 +90,21 @@ def get_height():
         _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
 
+def get_luminosity():
+    import units.tsl2591
+
+    tsl = units.tsl2591.Tsl2591()  # initialize
+
+    _mqtt_pub = mqtt_pub()
+    topic = Config().conf.get('LUX','topic')
+    Wait_time = float(Config().conf.get('LUX','WAIT_TIME'))
+    while True:
+        full_spectrum, ir_spectrum = tsl.get_full_luminosity()  # read raw values (full spectrum and ir spectrum)
+        luminosity = float("{:.2f}".format(tsl.calculate_lux(full_spectrum, ir_spectrum)))  # convert raw values to lux
+        data = {'luminosity':luminosity, 'full_spectrum':full_spectrum, 'ir_spectrum': ir_spectrum}
+        _mqtt_pub.sender(data, topic)
+        time.sleep(Wait_time)
+
 class mqtt_sub():
     def __init__(self):
         HOST = Config().conf.get('mqtt', 'host')
@@ -158,13 +173,16 @@ if __name__ == '__main__':
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
     GET_TEMPERATURE = Process(target=get_temperature, args=())
+    GET_LUMINOSITY = Process(target=get_luminosity, args=())
     GET_HEIGHT = Process(target=get_height, args=())
     MQTT_SUB = Process(target=mqtt_sub, args=())
     RUN_LED = Process(target=run_led, args=())
+    
 
     SERVER_TIME.start()
     GET_ADC_VALUE.start()
     GET_TEMPERATURE.start()
+    GET_LUMINOSITY.start()
     GET_HEIGHT.start()
     MQTT_SUB.start()
     RUN_LED.start()
@@ -172,6 +190,7 @@ if __name__ == '__main__':
     SERVER_TIME.join()
     GET_ADC_VALUE.join()
     GET_TEMPERATURE.join()
+    GET_LUMINOSITY.join()
     GET_HEIGHT.join()
     MQTT_SUB.join()
     RUN_LED.join()
