@@ -77,7 +77,7 @@ class ADS1x15(object):
 
     def __init__(self, address=ADS1x15_DEFAULT_ADDRESS, i2c=None, **kwargs):
         if i2c is None:
-            import Adafruit_GPIO.I2C as I2C
+            import units.Adafruit_GPIO.I2C as I2C
             i2c = I2C
         self._device = i2c.get_i2c_device(address, **kwargs)
 

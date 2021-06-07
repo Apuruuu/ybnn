@@ -119,6 +119,7 @@ class mqtt_sub():
         value = data.decode('utf-8')
 
         def set_device(GPIO_PIN, value):
+            GPIO.setup(GPIO_PIN, GPIO.OUT)
             if value == 1:
                 GPIO.output(GPIO_PIN, GPIO.HIGH)
             elif value == 0:
@@ -151,6 +152,8 @@ def data_led(value):
 if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
+
+    time.sleep(30) # 等待网络启动
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
