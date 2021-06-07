@@ -131,7 +131,7 @@ class mqtt_sub():
     def controller(self, topic, data):
         mode = topic.split("/")[-1]
         device = topic.split("/")[-2]
-        value = data.decode('utf-8')
+        value = int(data.decode('utf-8'))
 
         def set_device(GPIO_PIN, value):
             GPIO.setup(GPIO_PIN, GPIO.OUT)
@@ -173,8 +173,9 @@ if __name__ == '__main__':
     # wait network
     print("waiting network 30 Seconds")
     for i in range(3):
-        print((i+1)*10, "Seconds")
         time.sleep(10)
+        print((i+1)*10, "Seconds")
+        
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
