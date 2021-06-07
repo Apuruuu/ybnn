@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # wait network
     print("waiting network 30 Seconds")
     for i in range(3):
-        print((i+1)*10, Seconds)
+        print((i+1)*10, "Seconds")
         time.sleep(10)
 
     SERVER_TIME = Process(target=server_time, args=())
