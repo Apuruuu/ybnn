@@ -74,7 +74,7 @@ def get_temperature():
 def get_height():
     import units.Ultrasonic_ranger
 
-    pin = int(Config().conf.get('SENSOR PIN','UR'))
+    pin = Config().conf.getint('SENSOR PIN','UR')
 
     C_width = int(Config().conf.get('UR','width'))
     C_depth = int(Config().conf.get('UR','depth'))
