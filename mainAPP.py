@@ -151,6 +151,7 @@ class mqtt_sub():
 
 def run_led():
     GPIO_PIN = Config().conf.getint('GPIO PIN','run_led')
+    GPIO.setup(GPIO_PIN, GPIO.OUT)
     while True:
         GPIO.output(GPIO_PIN, GPIO.HIGH)
         time.sleep(1)
@@ -159,6 +160,7 @@ def run_led():
 
 def data_led(value):
     GPIO_PIN = Config().conf.getint('GPIO PIN','data_led')
+    GPIO.setup(GPIO_PIN, GPIO.OUT)
     if value == 1:
         GPIO.output(GPIO_PIN, GPIO.HIGH)
     elif value == 0:
@@ -169,6 +171,7 @@ if __name__ == '__main__':
     GPIO.setmode(GPIO.BCM)
 
     time.sleep(30) # 等待网络启动
+    print("waiting network 30 Seconds")
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
