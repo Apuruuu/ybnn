@@ -3,6 +3,7 @@ import time
 from multiprocessing import Process
 import paho.mqtt.client as mqtt
 import json
+import os
 
 from Load_config import Config
 
@@ -20,6 +21,13 @@ class mqtt_pub():
         param = json.dumps(data)
         self.client.publish(topic, payload=param, qos=0)     # 发送消息
         print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
+        
+        # 写入文件
+        if not topic == 'homeassistant/sensor/time':
+            cache = "{:<20s} | {:<10s} | {:s}".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                                str(topic.split("/")[-1]),
+                                                str(data))
+            save_file.write(cache) 
 
 def server_time():
     _mqtt_pub = mqtt_pub()
@@ -48,7 +56,10 @@ def get_ADC_value():
         # ADC debug
         # print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
 
-        data = {'PH':values[0], 'turbidity':values[1], 'ADC3_A2':values[2], 'ADC4_A3':values[3]}
+        data = {'PH':float("{:.2f}".format(values[0])),
+                 'turbidity':float("{:.2f}".format(values[1])),
+                 'ADC3_A2':float("{:.2f}".format(values[2])),
+                 'ADC4_A3':float("{:.2f}".format(values[3]))}
         _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
 
@@ -65,7 +76,8 @@ def get_temperature():
     while True:
         result = instance.read()
         if result.is_valid():
-            data = {'temperature':result.temperature, 'humidity':result.humidity}
+            data = {'temperature':float("{:.2f}".format(result.temperature)),
+                    'humidity':float("{:.2f}".format(result.humidity))}
             _mqtt_pub.sender(data, topic)
             time.sleep(Wait_time)
         else:
@@ -84,8 +96,8 @@ def get_height():
     topic = Config().conf.get('UR','topic')
     Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
     while True:
-        height = units.Ultrasonic_ranger.Get_depth(pin)
-        volume = (C_depth * C_width * (C_height-height)) / 1000
+        height = float("{:.2f}".format(units.Ultrasonic_ranger.Get_depth(pin)))  
+        volume = float("{:.2f}".format((C_depth * C_width * (C_height-height)) / 1000))  
         data = {'height':height, 'volume':volume}
         _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
@@ -170,6 +182,13 @@ if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
 
+    # 历史记录保存位置
+    save_file_path = os.path('home', 'pi', 'log')
+    if not os.path.exists(save_file_path):  #判断是否存在文件夹如果不存在则创建为文件夹
+        os.makedirs(save_file_path)
+    save_file_filename = os.path(save_file_path, str(int(time.time()))+'.txt')
+    save_file = open(save_file_filename,"a")
+
     # wait network
     print("waiting network 30 Seconds")
     for i in range(3):
@@ -201,3 +220,5 @@ if __name__ == '__main__':
     GET_HEIGHT.join()
     MQTT_SUB.join()
     RUN_LED.join()
+
+    save_file.close()
