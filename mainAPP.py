@@ -24,10 +24,12 @@ class mqtt_pub():
         
         # 写入文件
         if not topic == 'homeassistant/sensor/time':
-            cache = "{:<20s} | {:<10s} | {:s}".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                                str(topic.split("/")[-1]),
-                                                str(data))
-            save_file.write(cache) 
+            with open(save_file_filename,"a") as save_file:
+                cache = "{:<20s} | {:<10s} | {:s}\n".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                                    str(topic.split("/")[-1]),
+                                                    str(data))
+                save_file.write(cache) 
+                save_file.close()
 
 def server_time():
     _mqtt_pub = mqtt_pub()
@@ -187,14 +189,12 @@ if __name__ == '__main__':
     if not os.path.exists(save_file_path):  #判断是否存在文件夹如果不存在则创建为文件夹
         os.makedirs(save_file_path)
     save_file_filename = os.path.join(save_file_path, str(int(time.time()))+'.txt')
-    save_file = open(save_file_filename,"a")
-
+    
     # wait network
     print("waiting network 30 Seconds")
     for i in range(3):
         time.sleep(10)
-        print((i+1)*10, "Seconds")
-        
+        print((i+1)*10, "Seconds")     
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
@@ -203,7 +203,6 @@ if __name__ == '__main__':
     GET_HEIGHT = Process(target=get_height, args=())
     MQTT_SUB = Process(target=mqtt_sub, args=())
     RUN_LED = Process(target=run_led, args=())
-    
 
     SERVER_TIME.start()
     GET_ADC_VALUE.start()
@@ -220,5 +219,3 @@ if __name__ == '__main__':
     GET_HEIGHT.join()
     MQTT_SUB.join()
     RUN_LED.join()
-
-    save_file.close()
