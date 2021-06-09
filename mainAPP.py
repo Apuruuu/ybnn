@@ -183,10 +183,10 @@ if __name__ == '__main__':
     GPIO.setmode(GPIO.BCM)
 
     # 历史记录保存位置
-    save_file_path = os.path('home', 'pi', 'log')
+    save_file_path = os.path.join('home', 'pi', 'log')
     if not os.path.exists(save_file_path):  #判断是否存在文件夹如果不存在则创建为文件夹
         os.makedirs(save_file_path)
-    save_file_filename = os.path(save_file_path, str(int(time.time()))+'.txt')
+    save_file_filename = os.path.join(save_file_path, str(int(time.time()))+'.txt')
     save_file = open(save_file_filename,"a")
 
     # wait network
