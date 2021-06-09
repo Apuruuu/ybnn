@@ -20,10 +20,10 @@ class mqtt_pub():
     def sender(self,data,topic):
         param = json.dumps(data)
         self.client.publish(topic, payload=param, qos=0)     # 发送消息
-        print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
-        
+
         # 写入文件
         if not topic == 'homeassistant/sensor/time':
+            print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
             with open(save_file_filename,"a") as save_file:
                 cache = "{:<20s} | {:<10s} | {:s}\n".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                                                     str(topic.split("/")[-1]),
@@ -41,10 +41,7 @@ def server_time():
         time.sleep(1)
 
 def get_ADC_value():
-    import units.ADS1x15
-
-    adc = units.ADS1x15.ADS1115()
-    GAIN = Config().conf.getint('ADC','GAIN')
+    import units.ADS1115
 
     _mqtt_pub = mqtt_pub()
     topic = Config().conf.get('ADC','topic')
@@ -54,7 +51,7 @@ def get_ADC_value():
         # 读取ADC所有信道的值
         values = [0]*4
         for i in range(4):
-            values[i] = adc.read_adc(i, gain=GAIN)
+            values[i] = units.ADS1115.read_adc(i)
         # ADC debug
         # print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
 
@@ -93,15 +90,21 @@ def get_height():
     C_width = int(Config().conf.get('UR','width'))
     C_depth = int(Config().conf.get('UR','depth'))
     C_height = int(Config().conf.get('UR','height'))
+    height_max = int(Config().conf.get('UR','height_max'))
 
     _mqtt_pub = mqtt_pub()
     topic = Config().conf.get('UR','topic')
     Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
     while True:
-        height = float("{:.2f}".format(units.Ultrasonic_ranger.Get_depth(pin)))  
-        volume = float("{:.2f}".format((C_depth * C_width * (C_height-height)) / 1000))  
+        height = float("{:.2f}".format(C_height-units.Ultrasonic_ranger.Get_depth(pin)))  
+        volume = float("{:.2f}".format((C_depth * C_width * height) / 1000))
         data = {'height':height, 'volume':volume}
         _mqtt_pub.sender(data, topic)
+
+        # 自动关闭进水泵
+        if height > height_max:
+            _mqtt_pub.sender(0, 'homeassistant/switch/switch3/set')
+            _mqtt_pub.sender(1, 'homeassistant/switch/warn_led/set')
         time.sleep(Wait_time)
 
 def get_luminosity():
@@ -118,6 +121,15 @@ def get_luminosity():
         data = {'luminosity':luminosity, 'full_spectrum':full_spectrum, 'ir_spectrum': ir_spectrum}
         _mqtt_pub.sender(data, topic)
         time.sleep(Wait_time)
+
+def Web_server():
+    import http.server, socketserver
+
+    PORT = Config().conf.get('WEB','port')
+    Handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print("serving at port", PORT)
+        httpd.serve_forever()
 
 class mqtt_sub():
     def __init__(self):
@@ -172,8 +184,8 @@ def run_led():
         GPIO.output(GPIO_PIN, GPIO.LOW)
         time.sleep(1)
 
-def data_led(value):
-    GPIO_PIN = Config().conf.getint('GPIO PIN','data_led')
+def warn_led(value):
+    GPIO_PIN = Config().conf.getint('GPIO PIN','warn_led')
     GPIO.setup(GPIO_PIN, GPIO.OUT)
     if value == 1:
         GPIO.output(GPIO_PIN, GPIO.HIGH)
@@ -183,6 +195,7 @@ def data_led(value):
 if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
+    GPIO.setup(Config().conf.getint('GPIO PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
 
     # 历史记录保存位置
     save_file_path = os.path.join('home', 'pi', 'log')
@@ -203,6 +216,7 @@ if __name__ == '__main__':
     GET_HEIGHT = Process(target=get_height, args=())
     MQTT_SUB = Process(target=mqtt_sub, args=())
     RUN_LED = Process(target=run_led, args=())
+    WEB_SERVER = Process(target=Web_server, args=())
 
     SERVER_TIME.start()
     GET_ADC_VALUE.start()
@@ -211,6 +225,7 @@ if __name__ == '__main__':
     GET_HEIGHT.start()
     MQTT_SUB.start()
     RUN_LED.start()
+    WEB_SERVER.start()
 
     SERVER_TIME.join()
     GET_ADC_VALUE.join()
@@ -219,3 +234,4 @@ if __name__ == '__main__':
     GET_HEIGHT.join()
     MQTT_SUB.join()
     RUN_LED.join()
+    WEB_SERVER.join()
