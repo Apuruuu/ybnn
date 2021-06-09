@@ -23,7 +23,7 @@ def Get_depth(pin):
 
     # Calculate pulse length
     time_difference = end-start
-    depth = (time_difference * 340000) / 2
+    depth = (time_difference * 340290) / 2
 
     return depth
 
