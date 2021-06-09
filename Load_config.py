@@ -3,7 +3,7 @@ import configparser
 
 class Config(object):
     def __init__(self):
-        self.config_file_path = 'home/pi/ybnn/config.cfg'
+        self.config_file_path = os.path.join('home','pi','ybnn','config.cfg')
         if not os.walk(self.config_file_path):
             self.create_default_config_file()
         self.read()
