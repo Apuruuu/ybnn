@@ -19,9 +19,9 @@ class mqtt_pub():
 
     def sender(self,data,topic):
         param = json.dumps(data)
-        self.client.publish(topic, payload=param, qos=0)     # 发送消息
+        self.client.publish(topic, payload=param, qos=0)  # send message
 
-        # 写入文件
+        # write to file
         if not topic == 'homeassistant/sensor/time':
             print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
             with open(save_file_filename,"a") as save_file:
@@ -48,7 +48,7 @@ def get_ADC_value():
     Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
 
     while True:
-        # 读取ADC所有信道的值
+        # read ALL of ADC's channel
         values = [0]*4
         for i in range(4):
             values[i] = units.ADS1115.readAdc(i)
@@ -99,7 +99,7 @@ def get_height():
         data = {'height':height, 'volume':volume}
         _mqtt_pub.sender(data, topic)
 
-        # 自动关闭进水泵
+        # turn OFF the pump_in when over the MAX level
         if height > height_max:
             _mqtt_pub.sender(0, 'homeassistant/switch/switch3/set')
             _mqtt_pub.sender(1, 'homeassistant/switch/warn_led/set')
@@ -146,11 +146,11 @@ class mqtt_sub():
         self.client = mqtt.Client()
         self.client.username_pw_set(username, password=passwd)
         self.client.on_connect = on_connect
-        self.client.connect(HOST, PORT, 600) # 600为keepalive的时间间隔
+        self.client.connect(HOST, PORT, 600) # keepalive
         self.client.subscribe(command_topic, qos=0)
         
         self.client.on_message = on_message
-        self.client.loop_forever() # 保持连接
+        self.client.loop_forever() # keep connect
 
     def controller(self, topic, data):
         mode = topic.split("/")[-1]
@@ -190,22 +190,44 @@ def warn_led(value):
     elif value == 0:
         GPIO.output(GPIO_PIN, GPIO.LOW)
 
+def get_webservertime(host):
+    import http.client
+    conn=http.client.HTTPConnection(host)
+    conn.request("GET", "/")
+    r=conn.getresponse()
+
+    ts=  r.getheader('date') # get HEAD
+
+    ltime= time.strptime(ts[5:25], "%d %b %Y %H:%M:%S")
+    print(ltime)
+    # change time to Japan localtime
+    ttime=time.localtime(time.mktime(ltime)+9*60*60)
+    print(ttime)
+    dat="sudo date -s %u/%02u/%02u"%(ttime.tm_year,ttime.tm_mon,ttime.tm_mday)
+    tm="sudo date -s %02u:%02u:%02u"%(ttime.tm_hour,ttime.tm_min,ttime.tm_sec)
+    print (dat,tm)
+    os.system(dat)
+    os.system(tm)
+
 if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(Config().conf.getint('GPIO PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
 
-    # 历史记录保存位置
+    # history save path
     save_file_path = os.path.join('home', 'pi', 'ybnn', 'log', 'data')
-    if not os.path.exists(save_file_path):  #判断是否存在文件夹如果不存在则创建为文件夹
+    if not os.path.exists(save_file_path):  # create path when it does not exist
         os.makedirs(save_file_path)
-    save_file_filename = os.path.join(save_file_path, str(int(time.time()))+'.txt')
+    save_file_filename = os.path.join(save_file_path, str(time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))+'.txt')
     
     # wait network
     print("waiting network 30 Seconds")
     for i in range(3):
         time.sleep(10)
-        print((i+1)*10, "Seconds")     
+        print((i+1)*10, "Seconds")
+
+    # set time to network(default Google.com)
+    get_webservertime('www.google.com')
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())
