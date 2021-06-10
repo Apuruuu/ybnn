@@ -125,7 +125,7 @@ def get_luminosity():
 def Web_server():
     import http.server, socketserver
 
-    PORT = Config().conf.get('WEB','port')
+    PORT = Config().conf.getint('WEB','port')
     Handler = http.server.SimpleHTTPRequestHandler
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print("serving at port", PORT)
