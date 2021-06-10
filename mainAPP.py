@@ -51,9 +51,7 @@ def get_ADC_value():
         # 读取ADC所有信道的值
         values = [0]*4
         for i in range(4):
-            values[i] = units.ADS1115.read_adc(i)
-        # ADC debug
-        # print('| {0:>6} | {1:>6} | {2:>6} | {3:>6} |'.format(*values))
+            values[i] = units.ADS1115.readAdc(i)
 
         data = {'PH':float("{:.2f}".format(values[0])),
                  'turbidity':float("{:.2f}".format(values[1])),
