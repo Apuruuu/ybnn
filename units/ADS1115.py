@@ -151,7 +151,7 @@ def readAdc(channel):
 	config=(CONFIG_OS_START +				# start conversion 
 			CONFIG_MUX_AIN0P_GNDN  + 		# single ended conversion
 			(channel<<12) + 				# select channel
-			CONFIG_FSR_4V096 + 				# 4.096v pre amp (3.3v signal)
+			CONFIG_FSR_6V144 + 				# 6.144V
 			CONFIG_MODE_SINGLE_SHOT + 		# single conversion and shutdown
 			CONFIG_DATA_RATE_128SPS + 		# data rate
 			CONFIG_COMP_MODE_TRADITIONAL + 	# comp conventional 
