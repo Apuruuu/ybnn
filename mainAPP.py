@@ -224,7 +224,7 @@ if __name__ == '__main__':
     GPIO.setup(Config().conf.getint('GPIO PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
 
     # history save path
-    save_file_path = os.path.join('home', 'pi', 'ybnn', 'log', 'data')
+    save_file_path = os.path.join('/','home', 'pi', 'ybnn', 'log', 'data')
     if not os.path.exists(save_file_path):  # create path when it does not exist
         os.makedirs(save_file_path)
     save_file_filename = os.path.join(save_file_path, str(time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))+'.txt')
