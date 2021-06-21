@@ -226,7 +226,7 @@ def get_webservertime(host):
 if __name__ == '__main__':
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(Config().conf.getint('GPIO PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(Config().conf.getint('LED PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
 
     # history save path
     save_file_path = os.path.join('/','home', 'pi', 'ybnn', 'log', 'data')
