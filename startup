@@ -13,16 +13,16 @@
 
 case "$1" in
     start)
-        echo "Starting LED Blink"
+        echo "Starting YBNN"
         python3 /home/pi/ybnn/mainAPP.py &
         ;;
     stop)
-        echo "Stopping ledblink"
+        echo "Stopping YBNN"
         #killall mainAPP.py
-        kill $(ps aux | grep -m 1 'python3 /home/pi/ybnn/mainAPP.py' | awk '{ print $2 }')
+        pkill python3
         ;;
     *)
-        echo "Usage: service ledblink start|stop"
+        echo "Usage: service ybnn start|stop|status"
         exit 1
         ;;
 esac
