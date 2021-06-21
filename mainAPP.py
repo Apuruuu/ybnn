@@ -188,7 +188,7 @@ class mqtt_sub():
                 _mqtt_pub.sender(int(value), state_topic)
 
 def run_led():
-    GPIO_PIN = Config().conf.getint('GPIO PIN','run_led')
+    GPIO_PIN = Config().conf.getint('LED PIN','run_led')
     GPIO.setup(GPIO_PIN, GPIO.OUT)
     while True:
         GPIO.output(GPIO_PIN, GPIO.HIGH)
@@ -197,7 +197,7 @@ def run_led():
         time.sleep(1)
 
 def warn_led(value):
-    GPIO_PIN = Config().conf.getint('GPIO PIN','warn_led')
+    GPIO_PIN = Config().conf.getint('LED PIN','warn_led')
     GPIO.setup(GPIO_PIN, GPIO.OUT)
     if value == 1:
         GPIO.output(GPIO_PIN, GPIO.HIGH)
