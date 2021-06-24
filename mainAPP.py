@@ -19,7 +19,7 @@ class mqtt_pub():
 
     def sender(self,data,topic):
         param = json.dumps(data)
-        self.client.publish(topic, payload=param, qos=0)  # send message
+        self.client.publish(topic, payload=param, qos=2)  # send message
 
         # write to file
         if not topic == 'homeassistant/sensor/time':
@@ -149,22 +149,35 @@ class mqtt_sub():
         PORT = Config().conf.getint('mqtt', 'port')
         username = Config().conf.get('mqtt', 'username')
         passwd = Config().conf.get('mqtt', 'passwd')
-        command_topic = str(Config().conf.get('mqtt', 'root_topic')) + '#'
+        self.command_topic = str(Config().conf.get('mqtt', 'root_topic')) + '#'
 
-        def on_connect(client, userdata, flags, rc):
-            print("Connected with result code: " + str(rc))
-
-        def on_message(client, userdata, msg):
-            self.controller(msg.topic, msg.payload)
-        
-        self.client = mqtt.Client()
+        self.client = mqtt.Client(client_id="pi", clean_session=False)
+        self.client.on_connect = self.on_connect
+        self.client.on_disconnect = self.on_disconnect
+        self.client.on_message = self.on_message
         self.client.username_pw_set(username, password=passwd)
-        self.client.on_connect = on_connect
-        self.client.connect(HOST, PORT, 600) # keepalive
-        self.client.subscribe(command_topic, qos=0)
-        
-        self.client.on_message = on_message
-        self.client.loop_forever() # keep connect
+        self.client.connect(HOST, PORT, keepalive=600)
+        self.client.loop_forever()
+
+    def on_connect(self, client, userdata, flags, rc):
+        print("Connected with result code: " + str(rc))
+        self.client.subscribe(self.command_topic, qos=2)
+
+    def on_message(self, client, userdata, msg):
+        self.controller(msg.topic, msg.payload)
+
+    def on_disconnect(self, client, userdata, rc):
+        print("Disconnected from MQTT server with code: %s" % rc)
+        while rc != 0:
+            time.sleep(2)
+            try:
+                print("Reconnecting...")
+                rc = self.client.reconnect()
+            except:
+                continue
+
+            finally:
+                self.client.loop_stop()
 
     def controller(self, topic, data):
         mode = topic.split("/")[-1]
