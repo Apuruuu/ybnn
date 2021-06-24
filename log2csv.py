@@ -13,9 +13,13 @@ class Conversion():
         time_cache = ''
         self.datas = {}
         for line in log_file:
-            time_last, _, data = line.split(" | ")
+            time_last, _, data = line.split("  | ")
 
-            if time_cache == '' : time_cache = datetime.datetime.strptime(time_last,"%Y-%m-%d %H:%M:%S")
+            print(time_last, type(time_last), data, type(data))
+
+            if len(data)<5 : continue
+
+            if time_cache == '' : time_cache = datetime.datetime.strptime(time_last,"%Y-%m-%d %H:%M:%S")            
 
             # 计算时间差
             time_last_format = datetime.datetime.strptime(time_last,"%Y-%m-%d %H:%M:%S")
