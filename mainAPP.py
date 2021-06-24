@@ -1,11 +1,28 @@
 import RPi.GPIO as GPIO
+import os
 import time
 from multiprocessing import Process
 import paho.mqtt.client as mqtt
 import json
-import os
+import logging
+from logging.handlers import RotatingFileHandler
+import traceback
 
+import sensor_get
 from Load_config import Config
+
+
+def Web_server():
+    import http.server, socketserver
+
+    try:
+        PORT = Config().conf.getint('WEB','port')
+        Handler = http.server.SimpleHTTPRequestHandler
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            logging.info("Webserver at port", PORT)
+            httpd.serve_forever()
+    except: logging.warning(traceback.format_exc())
+    finally:logging.warning('Web server stopped')
 
 class mqtt_pub():
     def __init__(self):
@@ -15,246 +32,289 @@ class mqtt_pub():
         passwd = Config().conf.get('mqtt', 'passwd')
         self.client = mqtt.Client()
         self.client.username_pw_set(username, passwd)
-        self.client.connect(self.HOST, self.PORT, 60)
+        try: self.client.connect(self.HOST, self.PORT, 60)
+        except: logging.warning(traceback.format_exc())
 
     def sender(self,data,topic):
         param = json.dumps(data)
         self.client.publish(topic, payload=param, qos=2)  # send message
+        try:
+            if not topic.split("/")[-1] == 'time':
+                logging.debug('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
+                self.log(topic.split("/")[-1], data)
+        except: logging.warning(traceback.format_exc())
 
+    def log(self, device, data):
         # write to file
-        if not topic == 'homeassistant/sensor/time':
-            print('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
-            with open(save_file_filename,"a") as save_file:
-                cache = "{:<20s} | {:<10s} | {:s}\n".format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                                    str(topic.split("/")[-1]),
-                                                    str(data))
-                save_file.write(cache) 
-                save_file.close()
+        with open(save_file_filename,"a") as save_file:
+            log_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            cache = "{:<20s} | {:<10s} | {:s}\n".format(log_time, device, str(data))
 
-def server_time():
-    _mqtt_pub = mqtt_pub()
-    topic = "homeassistant/sensor/time"
-
-    while True:
-        data = {"time":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
-        _mqtt_pub.sender(data, topic)
-        time.sleep(1)
-
-def get_ADC_value():
-    import units.ADS1115
-
-    _mqtt_pub = mqtt_pub()
-    topic = Config().conf.get('ADC','topic')
-    Wait_time = float(Config().conf.get('ADC','WAIT_TIME'))
-
-    while True:
-        # read ALL of ADC's channel
-        values = [0]*4
-        for i in range(4):
-            values[i] = units.ADS1115.readAdc(i) * 6.144 / 32768 # 16bit(2^16) = 65536, half is minus
-
-        # 计算PH
-        _temperature      = 25.0
-        _acidVoltage      = 2032.44
-        _neutralVoltage   = 1500.0
-        slope     = (7.0-4.0)/((_neutralVoltage-1500.0)/3.0 - (_acidVoltage-1500.0)/3.0)
-        intercept = 7.0 - slope*(_neutralVoltage-1500.0)/3.0
-        PH_value  = slope*(values[0]*1000-1500.0)/3.0+intercept
-
-        # 计算浊度
-        if values[1] <= 5 and values[1] >= 1 :
-            turbidity_percentage = 4.41 - (values[1] * 0.8457)
-            turbidity_NTU = turbidity_percentage * 1300 # 10-6(PPM) = 1ppm = 1mg/L = 0.13NTU(empirical formula), that is: 3.5% = 35000PPM = 35000mg/L = 4550NTU
-        else: turbidity_NTU = -1
-
-        data = {'PH':float("{:.2f}".format(PH_value)),
-                 'turbidity':float("{:.2f}".format(turbidity_NTU)),
-                 'ADC3_A2':float("{:.2f}".format(values[2])),
-                 'ADC4_A3':float("{:.2f}".format(values[3]))}
-        _mqtt_pub.sender(data, topic)
-        time.sleep(Wait_time)
-
-def get_temperature():
-    import units.dht11
-
-    pin=int(Config().conf.get('SENSOR PIN','DHT11'))
-    instance = units.dht11.DHT11(pin)
-
-    _mqtt_pub = mqtt_pub()
-    topic = Config().conf.get('DHT11','topic')
-    Wait_time = float(Config().conf.get('DHT11','WAIT_TIME'))
-
-    while True:
-        result = instance.read()
-        if result.is_valid():
-            data = {'temperature':float("{:.2f}".format(result.temperature)),
-                    'humidity':float("{:.2f}".format(result.humidity))}
-            _mqtt_pub.sender(data, topic)
-            time.sleep(Wait_time)
-        else:
-            continue
-
-def get_height():
-    import units.Ultrasonic_ranger
-
-    pin = Config().conf.getint('SENSOR PIN','UR')
-
-    C_width = int(Config().conf.get('UR','width'))
-    C_depth = int(Config().conf.get('UR','depth'))
-    C_height = int(Config().conf.get('UR','height'))
-    height_max = int(Config().conf.get('UR','height_max'))
-
-    _mqtt_pub = mqtt_pub()
-    topic = Config().conf.get('UR','topic')
-    Wait_time = float(Config().conf.get('UR','WAIT_TIME'))
-    while True:
-        height = float("{:.2f}".format(C_height-units.Ultrasonic_ranger.Get_depth(pin)))  
-        volume = float("{:.2f}".format((C_depth * C_width * height) / 1000))
-        data = {'height':height, 'volume':volume}
-        _mqtt_pub.sender(data, topic)
-
-        # turn OFF the pump_in when over the MAX level
-        if height > height_max:
-            _mqtt_pub.sender(0, 'homeassistant/switch/switch3/set')
-            _mqtt_pub.sender(1, 'homeassistant/switch/warn_led/set')
-        time.sleep(Wait_time)
-
-def get_luminosity():
-    import units.tsl2591
-
-    tsl = units.tsl2591.Tsl2591()  # initialize
-
-    _mqtt_pub = mqtt_pub()
-    topic = Config().conf.get('LUX','topic')
-    Wait_time = float(Config().conf.get('LUX','WAIT_TIME'))
-    while True:
-        full_spectrum, ir_spectrum = tsl.get_full_luminosity()  # read raw values (full spectrum and ir spectrum)
-        luminosity = float("{:.2f}".format(tsl.calculate_lux(full_spectrum, ir_spectrum)))  # convert raw values to lux
-        data = {'luminosity':luminosity, 'full_spectrum':full_spectrum, 'ir_spectrum': ir_spectrum}
-        _mqtt_pub.sender(data, topic)
-        time.sleep(Wait_time)
-
-def Web_server():
-    import http.server, socketserver
-
-    PORT = Config().conf.getint('WEB','port')
-    Handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print("serving at port", PORT)
-        httpd.serve_forever()
+            save_file.write(cache) 
+            save_file.close()
 
 class mqtt_sub():
     def __init__(self):
+        self.command_topic = str(Config().conf.get('mqtt', 'switch_topic')) + '#'
+        self.status_topic = str(Config().conf.get('mqtt', 'status_topic'))
+        self._mqtt_pub=mqtt_pub()
+        self.mqtt_sub_init()
+    
+    def mqtt_sub_init(self):
         HOST = Config().conf.get('mqtt', 'host')
         PORT = Config().conf.getint('mqtt', 'port')
         username = Config().conf.get('mqtt', 'username')
         passwd = Config().conf.get('mqtt', 'passwd')
-        self.command_topic = str(Config().conf.get('mqtt', 'root_topic')) + '#'
-
         self.client = mqtt.Client(client_id="pi", clean_session=False)
+
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_message = self.on_message
+
         self.client.username_pw_set(username, password=passwd)
+
         self.client.connect(HOST, PORT, keepalive=600)
         self.client.loop_forever()
 
     def on_connect(self, client, userdata, flags, rc):
-        print("Connected with result code: " + str(rc))
+        logging.info("Connected with result code: " + str(rc))
         self.client.subscribe(self.command_topic, qos=2)
 
     def on_message(self, client, userdata, msg):
         self.controller(msg.topic, msg.payload)
 
     def on_disconnect(self, client, userdata, rc):
-        print("Disconnected from MQTT server with code: %s" % rc)
+        logging.info("Disconnected from MQTT server with code: %s" % rc)
         while rc != 0:
             time.sleep(2)
             try:
-                print("Reconnecting...")
+                logging.info("Try reconnecting...")
                 rc = self.client.reconnect()
             except:
+                logging.warning(traceback.format_exc())
                 continue
 
-            finally:
-                self.client.loop_stop()
+            finally: self.client.loop_stop()
 
     def controller(self, topic, data):
-        mode = topic.split("/")[-1]
+        action = topic.split("/")[-1]
         device = topic.split("/")[-2]
         value = int(data.decode('utf-8'))
 
-        def set_device(GPIO_PIN, value):
+        def set_device(GPIO_PIN, value, invert=True):
             GPIO.setup(GPIO_PIN, GPIO.OUT)
-            if value == 0:
-                GPIO.output(GPIO_PIN, GPIO.HIGH)
-            elif value == 1:
-                GPIO.output(GPIO_PIN, GPIO.LOW)
-            return True
+            if invert:
+                value = 1 - value
+            GPIO.output(GPIO_PIN, value)
 
-        if mode == 'set':
+        if action == 'set':
             GPIO_PIN = Config().conf.getint('GPIO PIN',device)
-            print('device: %s on Gpin(%d)[%s] set to %d'%(Config().conf.get('devices',device),GPIO_PIN,device,value))
+            logging.debug('device: %s on Gpin(%d)[%s] set to %d'%(Config().conf.get('devices name',device),GPIO_PIN,device,value))
             if set_device(GPIO_PIN, value):
-                state_topic = str(Config().conf.get('mqtt', 'root_topic')) + str(device)
-                _mqtt_pub=mqtt_pub()
-                _mqtt_pub.sender(int(value), state_topic)
+                _state_topic = self.status_topic + str(device)
+                self._mqtt_pub.sender(value, _state_topic)
+
+def server_time(wait_time = 1):
+    device_name = 'time'
+    _mqtt_pub = mqtt_pub()
+
+    while True:
+        try:
+            data = {"time":time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+            topic = Config().conf.get('mqtt','sensor_topic') + device_name
+            _mqtt_pub.sender(data, topic)
+
+        except:
+            logging.warning(traceback.format_exc())
+            continue
+
+        finally: time.sleep(wait_time)
+
+def get_ADC_value():
+    device_name = 'ads1115'
+    _mqtt_pub = mqtt_pub()
+
+    while True:
+        try:
+            PH, TURBIDITY, ADC3, ADC4 = sensor_get.get_ADC_value()
+            data = {'PH':PH, 'turbidity':TURBIDITY, 'ADC3_A2':ADC3, 'ADC4_A3':ADC4}
+            topic = Config().conf.get('mqtt','sensor_topic') + device_name
+            _mqtt_pub.sender(data, topic)
+
+        except:
+            logging.warning(traceback.format_exc())
+            continue
+
+        finally: time.sleep(Config().conf.getint('WAIT_TIME',device_name))
+
+def get_temperature():
+    device_name = 'dht11'
+    _mqtt_pub = mqtt_pub()
+
+    while True:
+        try:
+            pin = Config().conf.getint('SENSOR PIN','DHT11')
+            TEMPERATURE, HUMIDITY = sensor_get.get_temperature(pin)
+            data = {'temperature':TEMPERATURE, 'humidity':HUMIDITY}
+            topic = Config().conf.get('mqtt','sensor_topic') + device_name
+            _mqtt_pub.sender(data, topic)
+
+        except:
+            logging.warning(traceback.format_exc())
+            continue
+
+        finally: time.sleep(Config().conf.getint('WAIT_TIME',device_name))
+
+def get_height():
+    device_name = 'height'
+    _mqtt_pub = mqtt_pub()
+
+    while True:        
+        try:
+            pin = Config().conf.getint('SENSOR_GPIN','UR')
+            HEIGHT, VOLUME = sensor_get.get_volume(pin)
+            data = {'height':HEIGHT, 'volume':VOLUME}
+            topic = Config().conf.get('mqtt','sensor_topic') + device_name
+            _mqtt_pub.sender(data, topic)
+
+        except:
+            logging.warning(traceback.format_exc())
+            continue
+
+        finally:
+            # turn OFF the pump_in when over the MAX level
+            height_max = int(Config().conf.get('TROUGH','height_max'))
+            if HEIGHT > height_max:
+                _mqtt_pub.sender(0, 'homeassistant/switch/switch3/set')
+                _mqtt_pub.sender(1, 'homeassistant/switch/warn_led/set')
+            time.sleep(Config().conf.getint('WAIT_TIME',device_name))
+
+def get_luminosity():
+    device_name = 'lux'
+    _mqtt_pub = mqtt_pub()
+
+    while True:        
+        try:
+            FULL, IR, LUMINOSITY = sensor_get.get_luminosity()
+            data = {'luminosity':LUMINOSITY, 'full_spectrum':FULL, 'ir_spectrum': IR}
+            topic = Config().conf.get('mqtt','sensor_topic') + device_name
+            _mqtt_pub.sender(data, topic)
+
+        except:
+            logging.warning(traceback.format_exc())
+            continue
+
+        finally: time.sleep(Config().conf.getint('WAIT_TIME',device_name))
 
 def run_led():
-    GPIO_PIN = Config().conf.getint('LED PIN','run_led')
-    GPIO.setup(GPIO_PIN, GPIO.OUT)
     while True:
-        GPIO.output(GPIO_PIN, GPIO.HIGH)
-        time.sleep(1)
-        GPIO.output(GPIO_PIN, GPIO.LOW)
-        time.sleep(1)
-
-def warn_led(value):
-    GPIO_PIN = Config().conf.getint('LED PIN','warn_led')
-    GPIO.setup(GPIO_PIN, GPIO.OUT)
-    if value == 1:
-        GPIO.output(GPIO_PIN, GPIO.HIGH)
-    elif value == 0:
-        GPIO.output(GPIO_PIN, GPIO.LOW)
+        try:
+            GPIO_PIN = Config().conf.getint('LED PIN','run_led')
+            GPIO.setup(GPIO_PIN, GPIO.OUT)
+            status = 0
+            while True:
+                GPIO.output(GPIO_PIN, 1 - status)
+                time.sleep(1)
+        except: logging.warning(traceback.format_exc())
+        finally: time.sleep(10)
 
 def get_webservertime(host):
     import http.client
-    conn=http.client.HTTPConnection(host)
-    conn.request("GET", "/")
-    r=conn.getresponse()
 
-    ts=  r.getheader('date') # get HEAD
+    try:
+        logging.debug('setting system time')
+        conn=http.client.HTTPConnection(host)
+        conn.request("GET", "/")
+        r=conn.getresponse()
+        ts=  r.getheader('date') # get HEAD
+        ltime= time.strptime(ts[5:25], "%d %b %Y %H:%M:%S")
+        # change time to Japan localtime
+        ttime=time.localtime(time.mktime(ltime)+9*60*60)
+        dat="sudo date -s %u/%02u/%02u"%(ttime.tm_year,ttime.tm_mon,ttime.tm_mday)
+        tm="sudo date -s %02u:%02u:%02u"%(ttime.tm_hour,ttime.tm_min,ttime.tm_sec)
+        logging.debug('Internet time %u/%02u/%02u %02u:%02u:%02u'%(ttime.tm_year,
+                ttime.tm_mon,ttime.tm_mday, ttime.tm_hour,ttime.tm_min,ttime.tm_sec))
+        os.system(dat)
+        os.system(tm)
+    except: logging.warning(traceback.format_exc())
+    finally: logging.info('Localtime set to  %u/%02u/%02u %02u:%02u:%02u'%(ttime.tm_year,
+                    ttime.tm_mon,ttime.tm_mday, ttime.tm_hour,ttime.tm_min,ttime.tm_sec))
 
-    ltime= time.strptime(ts[5:25], "%d %b %Y %H:%M:%S")
-    print(ltime)
-    # change time to Japan localtime
-    ttime=time.localtime(time.mktime(ltime)+9*60*60)
-    print(ttime)
-    dat="sudo date -s %u/%02u/%02u"%(ttime.tm_year,ttime.tm_mon,ttime.tm_mday)
-    tm="sudo date -s %02u:%02u:%02u"%(ttime.tm_hour,ttime.tm_min,ttime.tm_sec)
-    print (dat,tm)
-    os.system(dat)
-    os.system(tm)
+def GPIO_INIT():
+    try:
+        logger.debug("Version = 1.0")
+        GPIO.cleanup()
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(Config().conf.getint('LED PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(Config().conf.getint('LED PIN','warn_led'), GPIO.OUT, initial=GPIO.HIGH)
+    except:
+        logging.warning(traceback.format_exc())
 
 if __name__ == '__main__':
-    GPIO.cleanup()
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(Config().conf.getint('LED PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
 
-    # history save path
-    save_file_path = os.path.join('/','home', 'pi', 'ybnn', 'log', 'data')
-    if not os.path.exists(save_file_path):  # create path when it does not exist
-        os.makedirs(save_file_path)
-    save_file_filename = os.path.join(save_file_path, str(time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()))+'.txt')
-    
+    import argparse
+    parser = argparse.ArgumentParser(prog='ybnn')
+    parser.add_argument('--loglevel','-ll', metavar='LL', default='info', type=str, help='Log leve. I/info[default] <N/none><C/critical><E/error><W/warning><D/debug>')
+    parser.add_argument('--log','-l', metavar='L', default=True, type=bool, help='Save sensors data (default True)')
+    parser.add_argument('--fast','-f', metavar='F', default=False, type=bool, help='Run without wait_network.')
+    args = parser.parse_args()
+
+    # ###############################################
+    # LOG LEVEL:
+    # N or none:     Nothing will be logged
+    # C or critical: The most critical information
+    # E or error:    Errors
+    # W or warning:  Child process error
+    # I or info:     General info
+    # D or debug:    All of MQTT message
+    # ###############################################
+
+    # 切换工作目录至文件目录
+    root_path = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(root_path)
+
+    logger = logging.getLogger(__name__)
+    _format=logging.Formatter('[%(levelname)s] %(asctime)s %(message)s')
+
+    # 控制台输出
+    CLI_output = logging.StreamHandler()  
+    CLI_output.setLevel(logging.DEBUG)  
+    CLI_output.setFormatter(_format)
+    logger.addHandler(CLI_output)
+
+    # 控制台输出保存到文件
+    _log_level = args.loglevel
+    if not _log_level == 'N' or not _log_level == "none":
+        log2file = RotatingFileHandler("CLI-LOG.txt",maxBytes = 1*1024,backupCount = 5)
+        if _log_level == 'C' or _log_level == "critical":log2file.setLevel(logging.CRITICAL)
+        elif _log_level == 'E' or _log_level == "error":log2file.setLevel(logging.ERROR)
+        elif _log_level == 'W' or _log_level == "warning":log2file.setLevel(logging.WARNING)
+        elif _log_level == 'I' or _log_level == "info":log2file.setLevel(logging.INFO)
+        elif _log_level == 'D' or _log_level == "debug":log2file.setLevel(logging.DEBUG)
+        log2file.setFormatter(_format)
+        logger.addHandler(log2file)
+
+    logger.info("Log Level = %s"%(_log_level))  
+    logger.debug("Version = 1.0")
+
     # wait network
-    print("waiting network 30 Seconds")
-    for i in range(3):
-        time.sleep(10)
-        print((i+1)*10, "Seconds")
+    if not args.fast:
+        logger.debug("waiting network 30 Seconds")
+        time.sleep(30)
+
+    log_path = os.path.join('log')
+    if not os.path.exists(log_path):  # create path when it does not exist
+        os.makedirs(log_path)
+    # history save path
+    save_file_filename = os.path.join(log_path, time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())+'.log')
+    
+    GPIO_INIT()
 
     # set time to network(default Google.com)
     get_webservertime('www.google.com')
+    GPIO.setup(Config().conf.getint('LED PIN','warn_led'), GPIO.OUT, initial=GPIO.LOW)
 
     SERVER_TIME = Process(target=server_time, args=())
     GET_ADC_VALUE = Process(target=get_ADC_value, args=())

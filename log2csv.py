@@ -1,6 +1,3 @@
-import os
-import sys, getopt
-import argparse
 import datetime
 import csv
 
@@ -15,7 +12,7 @@ class Conversion():
         for line in log_file:
             time_last, _, data = line.split("  | ")
 
-            print(time_last, type(time_last), data, type(data))
+            # print(time_last, type(time_last), data, type(data))
 
             if len(data)<5 : continue
 
