@@ -153,7 +153,7 @@ def get_temperature():
 
     while True:
         try:
-            pin = Config().conf.getint('SENSOR PIN','DHT11')
+            pin = Config().conf.getint('SENSOR_GPIN','DHT11')
             TEMPERATURE, HUMIDITY = sensor_get.get_temperature(pin)
             data = {'temperature':TEMPERATURE, 'humidity':HUMIDITY}
             topic = Config().conf.get('mqtt','sensor_topic') + device_name
@@ -242,7 +242,6 @@ def get_webservertime(host):
 
 def GPIO_INIT():
     try:
-        logger.debug("Version = 1.0")
         GPIO.cleanup()
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(Config().conf.getint('LED PIN','run_led'), GPIO.OUT, initial=GPIO.HIGH)
