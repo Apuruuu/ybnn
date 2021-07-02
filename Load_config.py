@@ -11,7 +11,7 @@ class Config(object):
     # 读取config文件
     def read(self):
         self.conf = configparser.ConfigParser()
-        self.conf.read(self.config_file_path)
+        self.conf.read(self.config_file_path, encoding='utf-8')
 
     def write(self,name1,name2,value):
         self.conf.set(name1, name2, value)
