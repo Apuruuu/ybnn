@@ -255,7 +255,7 @@ if __name__ == '__main__':
 
     import argparse
     parser = argparse.ArgumentParser(prog='ybnn')
-    parser.add_argument('--loglevel','-ll', metavar='LL', default='info', type=str, help='Log leve. I/info[default] <N/none><C/critical><E/error><W/warning><D/debug>')
+    parser.add_argument('--loglevel','-ll', metavar='LL', default='info', type=str, help='Log leve. I/info[default] <N/none><C/critical><E/error><W/warning><I/info><D/debug>')
     parser.add_argument('--log','-l', metavar='L', default=True, type=bool, help='Save sensors data (default True)')
     parser.add_argument('--fast','-f', metavar='F', default=False, type=bool, help='Run without wait_network.')
     args = parser.parse_args()
