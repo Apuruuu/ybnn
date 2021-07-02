@@ -32,7 +32,7 @@ class mqtt_pub():
         passwd = Config().conf.get('mqtt', 'passwd')
         self.client = mqtt.Client()
         self.client.username_pw_set(username, passwd)
-        try: self.client.connect(self.HOST, self.PORT, 60)
+        try: self.client.connect(self.HOST, self.PORT, 600)
         except: logging.warning(traceback.format_exc())
 
     def sender(self,data,topic):

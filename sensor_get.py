@@ -57,16 +57,16 @@ def get_volume(pin):
     GPIO.output(pin, GPIO.HIGH)
     time.sleep(0.5)
     GPIO.output(pin, GPIO.LOW)
-    start = time()
+    start = time.time()
 
     GPIO.setup(pin, GPIO.IN)
 
     # get duration from Ultrasonic SIG pin
     while GPIO.input(pin) == 0:
-        start = time()
+        start = time.time()
 
     while GPIO.input(pin) == 1:
-        end = time()
+        end = time.time()
 
     time_difference = end-start
     UR_value = (time_difference * 340290) / 2
