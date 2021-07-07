@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 import os
 import time
 from multiprocessing import Process
@@ -39,7 +39,7 @@ class mqtt_pub():
         param = json.dumps(data)
         self.client.publish(topic, payload=param, qos=2)  # send message
         try:
-            if not topic.split("/")[-1] == 'time':
+            if not topic.split("/")[-1] == 'time+':
                 logging.debug('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
                 self.log(topic.split("/")[-1], data)
         except: logging.warning(traceback.format_exc())
@@ -287,13 +287,16 @@ if __name__ == '__main__':
 
     # 控制台输出保存到文件
     _log_level = args.loglevel
+    print(_log_level)
     if not _log_level == 'N' or not _log_level == "none":
-        log2file = RotatingFileHandler("CLI-LOG.txt",maxBytes = 1*1024,backupCount = 5)
+        log2file = RotatingFileHandler("CLI-LOG.txt", maxBytes = 1*1024,backupCount = 5)
         if _log_level == 'C' or _log_level == "critical":log2file.setLevel(logging.CRITICAL)
         elif _log_level == 'E' or _log_level == "error":log2file.setLevel(logging.ERROR)
         elif _log_level == 'W' or _log_level == "warning":log2file.setLevel(logging.WARNING)
         elif _log_level == 'I' or _log_level == "info":log2file.setLevel(logging.INFO)
-        elif _log_level == 'D' or _log_level == "debug":log2file.setLevel(logging.DEBUG)
+        elif _log_level == 'D' or _log_level == "debug":
+            log2file.setLevel(logging.DEBUG)
+            print('debug')
         log2file.setFormatter(_format)
         logger.addHandler(log2file)
 
@@ -310,36 +313,9 @@ if __name__ == '__main__':
         os.makedirs(log_path)
     # history save path
     save_file_filename = os.path.join(log_path, time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())+'.log')
+    print(save_file_filename)
     
-    GPIO_INIT()
 
-    # set time to network(default Google.com)
-    get_webservertime('www.google.com')
-    GPIO.setup(Config().conf.getint('LED PIN','warn_led'), GPIO.OUT, initial=GPIO.LOW)
-
-    SERVER_TIME = Process(target=server_time, args=())
-    GET_ADC_VALUE = Process(target=get_ADC_value, args=())
-    GET_TEMPERATURE = Process(target=get_temperature, args=())
-    GET_LUMINOSITY = Process(target=get_luminosity, args=())
-    GET_HEIGHT = Process(target=get_height, args=())
-    MQTT_SUB = Process(target=mqtt_sub, args=())
-    RUN_LED = Process(target=run_led, args=())
-    WEB_SERVER = Process(target=Web_server, args=())
-
+    SERVER_TIME = Process(target=server_time, args=(,))
     SERVER_TIME.start()
-    GET_ADC_VALUE.start()
-    GET_TEMPERATURE.start()
-    GET_LUMINOSITY.start()
-    GET_HEIGHT.start()
-    MQTT_SUB.start()
-    RUN_LED.start()
-    WEB_SERVER.start()
-
     SERVER_TIME.join()
-    GET_ADC_VALUE.join()
-    GET_TEMPERATURE.join()
-    GET_LUMINOSITY.join()
-    GET_HEIGHT.join()
-    MQTT_SUB.join()
-    RUN_LED.join()
-    WEB_SERVER.join()

@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 import os
 import time
 from multiprocessing import Process
@@ -287,13 +287,16 @@ if __name__ == '__main__':
 
     # 控制台输出保存到文件
     _log_level = args.loglevel
+    print(_log_level)
     if not _log_level == 'N' or not _log_level == "none":
-        log2file = RotatingFileHandler("CLI-LOG.txt",maxBytes = 1*1024,backupCount = 5)
+        log2file = RotatingFileHandler("CLI-LOG.txt", maxBytes = 1*1024,backupCount = 5)
         if _log_level == 'C' or _log_level == "critical":log2file.setLevel(logging.CRITICAL)
         elif _log_level == 'E' or _log_level == "error":log2file.setLevel(logging.ERROR)
         elif _log_level == 'W' or _log_level == "warning":log2file.setLevel(logging.WARNING)
         elif _log_level == 'I' or _log_level == "info":log2file.setLevel(logging.INFO)
-        elif _log_level == 'D' or _log_level == "debug":log2file.setLevel(logging.DEBUG)
+        elif _log_level == 'D' or _log_level == "debug":
+            log2file.setLevel(logging.DEBUG)
+            print('debug')
         log2file.setFormatter(_format)
         logger.addHandler(log2file)
 
