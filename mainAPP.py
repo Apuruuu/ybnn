@@ -25,31 +25,31 @@ def Web_server():
     finally:logging.warning('Web server stopped')
 
 class mqtt_pub():
-    def __init__(self):
+    def __init__(self, save_file_filename):
         self.HOST = Config().conf.get('mqtt', 'host')
         self.PORT = Config().conf.getint('mqtt', 'port')
         username = Config().conf.get('mqtt', 'username')
         passwd = Config().conf.get('mqtt', 'passwd')
+        self.save_file_name = save_file_filename
         self.client = mqtt.Client()
         self.client.username_pw_set(username, passwd)
         try: self.client.connect(self.HOST, self.PORT, 600)
         except: logging.warning(traceback.format_exc())
 
     def sender(self,data,topic):
-        param = json.dumps(data)
-        self.client.publish(topic, payload=param, qos=2)  # send message
         try:
             if not topic.split("/")[-1] == 'time':
-                logging.debug('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
                 self.log(topic.split("/")[-1], data)
+                param = json.dumps(data)
+                self.client.publish(topic, payload=param, qos=2)  # send message
+                logging.debug('[MQTT]: Send "%s" to MQTT server [%s:%d] with topic "%s"'%(data, self.HOST, self.PORT, topic))
         except: logging.warning(traceback.format_exc())
 
     def log(self, device, data):
         # write to file
-        with open(save_file_filename,"a") as save_file:
+        with open(self.save_file_filename,"a") as save_file:
             log_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             cache = "{:<20s} | {:<10s} | {:s}\n".format(log_time, device, str(data))
-
             save_file.write(cache) 
             save_file.close()
 
@@ -114,9 +114,9 @@ class mqtt_sub():
                 _state_topic = self.status_topic + str(device)
                 self._mqtt_pub.sender(value, _state_topic)
 
-def server_time(wait_time = 1):
+def server_time(save_file_filename, wait_time = 1):
     device_name = 'time'
-    _mqtt_pub = mqtt_pub()
+    _mqtt_pub = mqtt_pub(save_file_filename)
 
     while True:
         try:
@@ -130,9 +130,9 @@ def server_time(wait_time = 1):
 
         finally: time.sleep(wait_time)
 
-def get_ADC_value():
+def get_ADC_value(save_file_filename):
     device_name = 'ads1115'
-    _mqtt_pub = mqtt_pub()
+    _mqtt_pub = mqtt_pub(save_file_filename)
 
     while True:
         try:
@@ -147,9 +147,9 @@ def get_ADC_value():
 
         finally: time.sleep(Config().conf.getint('WAIT_TIME',device_name))
 
-def get_temperature():
+def get_temperature(save_file_filename):
     device_name = 'dht11'
-    _mqtt_pub = mqtt_pub()
+    _mqtt_pub = mqtt_pub(save_file_filename)
 
     while True:
         try:
@@ -165,9 +165,9 @@ def get_temperature():
 
         finally: time.sleep(Config().conf.getint('WAIT_TIME',device_name))
 
-def get_height():
+def get_height(save_file_filename):
     device_name = 'height'
-    _mqtt_pub = mqtt_pub()
+    _mqtt_pub = mqtt_pub(save_file_filename)
 
     while True:        
         try:
@@ -189,9 +189,9 @@ def get_height():
                 _mqtt_pub.sender(1, 'homeassistant/switch/warn_led/set')
             time.sleep(Config().conf.getint('WAIT_TIME',device_name))
 
-def get_luminosity():
+def get_luminosity(save_file_filename):
     device_name = 'lux'
-    _mqtt_pub = mqtt_pub()
+    _mqtt_pub = mqtt_pub(save_file_filename)
 
     while True:        
         try:
@@ -317,11 +317,11 @@ if __name__ == '__main__':
     get_webservertime('www.google.com')
     GPIO.setup(Config().conf.getint('LED PIN','warn_led'), GPIO.OUT, initial=GPIO.LOW)
 
-    SERVER_TIME = Process(target=server_time, args=())
-    GET_ADC_VALUE = Process(target=get_ADC_value, args=())
-    GET_TEMPERATURE = Process(target=get_temperature, args=())
-    GET_LUMINOSITY = Process(target=get_luminosity, args=())
-    GET_HEIGHT = Process(target=get_height, args=())
+    SERVER_TIME = Process(target=server_time, args=(save_file_filename,))
+    GET_ADC_VALUE = Process(target=get_ADC_value, args=(save_file_filename,))
+    GET_TEMPERATURE = Process(target=get_temperature, args=(save_file_filename,))
+    GET_LUMINOSITY = Process(target=get_luminosity, args=(save_file_filename,))
+    GET_HEIGHT = Process(target=get_height, args=(save_file_filename,))
     MQTT_SUB = Process(target=mqtt_sub, args=())
     RUN_LED = Process(target=run_led, args=())
     WEB_SERVER = Process(target=Web_server, args=())
