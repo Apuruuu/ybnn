@@ -49,7 +49,7 @@ class mqtt_pub():
         # write to file
         with open(self.save_file_filename,"a") as save_file:
             log_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            cache = "{:<20s} | {:<10s} | {:s}\n".format(log_time, device, str(data))
+            cache = "{:s} | {:s} | {:s}\n".format(log_time, device, str(data))
             save_file.write(cache) 
             save_file.close()
 
@@ -250,8 +250,6 @@ def GPIO_INIT():
         logging.warning(traceback.format_exc())
 
 if __name__ == '__main__':
-    
-
     import argparse
     parser = argparse.ArgumentParser(prog='ybnn')
     parser.add_argument('--loglevel','-ll', metavar='LL', default='info', type=str, help='Log leve. I/info[default] <N/none><C/critical><E/error><W/warning><I/info><D/debug>')
