@@ -1,3 +1,0 @@
-[WARNING] 2021-07-08 16:10:56,022 this is main
-[WARNING] 2021-07-08 16:10:56,297 this is a
-[WARNING] 2021-07-08 16:11:20,855 this is main

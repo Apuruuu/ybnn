@@ -10,7 +10,7 @@ class Conversion():
         time_cache = ''
         self.datas = {}
         for line in log_file:
-            time_last, _, data = line.split("  | ")
+            time_last, _, data = line.split(" | ")
 
             # print(time_last, type(time_last), data, type(data))
 
